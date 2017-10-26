@@ -1,11 +1,20 @@
-service: aws-python-simple-http-endpoint
+service: rushup
 
 frameworkVersion: ">=1.2.0 <2.0.0"
 
 provider:
   name: aws
   runtime: python2.7
-
+  stage: ${opt:stage, self:custom.defaultStage}
+  profile: ${self:custom.profiles.${self:provider.stage}}
+  region: eu-west-2
+  memorySize: 512 # optional, in MB, default is 1024
+  timeout: 12 # optional, in seconds, default is 6
+custom:
+  defaultStage: dev
+  profiles:
+    dev: zeroandonedev
+    prod: technologyprod
 functions:
   currentTime:
     handler: handler.endpoint
@@ -13,3 +22,13 @@ functions:
       - http:
           path: ping
           method: get
+  savePushData:
+    handler: push.saveData
+    events:
+      - http:
+          path: push/{phoneNumber}
+          method: post
+          request:
+            parameters:
+              paths:
+                id: true
