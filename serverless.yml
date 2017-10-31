@@ -10,6 +10,17 @@ provider:
   region: eu-west-2
   memorySize: 512 # optional, in MB, default is 1024
   timeout: 12 # optional, in seconds, default is 6
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:eu-west-2:261650959426:table/rushup-mobilehub-1263655713-user-push"
+
 custom:
   defaultStage: dev
   profiles:
@@ -23,7 +34,7 @@ functions:
           path: ping
           method: get
   savePushData:
-    handler: push.saveData
+    handler: push.save_data
     events:
       - http:
           path: push/{phoneNumber}
@@ -31,4 +42,4 @@ functions:
           request:
             parameters:
               paths:
-                id: true
+                phoneNumber: true
