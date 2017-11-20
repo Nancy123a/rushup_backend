@@ -1,4 +1,5 @@
-service: rushup
+service:
+ name: rushup
 
 frameworkVersion: ">=1.2.0 <2.0.0"
 
@@ -19,13 +20,22 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:eu-west-2:261650959426:table/rushup-mobilehub-1263655713-user-push"
-
+      Resource: "arn:aws:dynamodb:eu-west-2:261650959426:table/user_token"
+    - Effect: Allow
+      Action:
+        - sns:SetEndpointAttributes
+        - sns:GetEndpointAttributes
+        - sns:CreatePlatformEndpoint
+      Resource: "/*"
+    - Effect: Allow
+      Action:
+        - sns:publish
+      Resource: "arn:aws:sns:eu-west-1:261650959426:app/GCM/rush_up"
 custom:
   defaultStage: dev
   profiles:
     dev: zeroandonedev
-    prod: technologyprod
+    prod: zeroandonedev
 functions:
   currentTime:
     handler: handler.endpoint
@@ -33,13 +43,11 @@ functions:
       - http:
           path: ping
           method: get
-  savePushData:
-    handler: push.save_data
+  saveToken:
+    handler: push.save_token
     events:
       - http:
-          path: push/{phoneNumber}
+          path: push
           method: post
-          request:
-            parameters:
-              paths:
-                phoneNumber: true
+          authorizer:
+            arn: arn:aws:cognito-idp:eu-west-2:261650959426:userpool/eu-west-2_9Rfg3SRNy
