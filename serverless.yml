@@ -3,12 +3,14 @@ service:
 
 frameworkVersion: ">=1.2.0 <2.0.0"
 
+plugins:
+  - serverless-aws-documentation
 provider:
   name: aws
   runtime: python2.7
   stage: ${opt:stage, self:custom.defaultStage}
   profile: ${self:custom.profiles.${self:provider.stage}}
-  region: eu-west-2
+  region: eu-west-1
   memorySize: 512 # optional, in MB, default is 1024
   timeout: 12 # optional, in seconds, default is 6
   iamRoleStatements:
@@ -20,13 +22,13 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:eu-west-2:261650959426:table/user_token"
+      Resource: "arn:aws:dynamodb:eu-west-1:261650959426:table/user_token"
     - Effect: Allow
       Action:
         - sns:SetEndpointAttributes
         - sns:GetEndpointAttributes
         - sns:CreatePlatformEndpoint
-      Resource: "/*"
+      Resource: "*"
     - Effect: Allow
       Action:
         - sns:publish
@@ -36,6 +38,13 @@ custom:
   profiles:
     dev: zeroandonedev
     prod: zeroandonedev
+  documentation:
+    models:
+      -
+        name: "TokenRequest"
+        description: "Endpoint platform token"
+        contentType: "application/json"
+        schema: ${file(models/tokenRequest.json)}
 functions:
   currentTime:
     handler: handler.endpoint
@@ -43,11 +52,32 @@ functions:
       - http:
           path: ping
           method: get
-  saveToken:
-    handler: push.save_token
+  publishMessage:
+    handler: push.publish_message
     events:
       - http:
-          path: push
+          path: publish
           method: post
           authorizer:
             arn: arn:aws:cognito-idp:eu-west-2:261650959426:userpool/eu-west-2_9Rfg3SRNy
+  saveToken:
+    handler: push.save_token
+    documentation:
+      summary: "Manage Endpoint platform"
+      description: "Creates or update endpoint platform"
+      requestBody:
+        description: "Token Request that hold endpoint token"
+      requestModels:
+        "application/json": "TokenRequest"
+    events:
+      - http:
+          path: token
+          method: post
+          authorizer:
+            arn: arn:aws:cognito-idp:eu-west-2:261650959426:userpool/eu-west-2_9Rfg3SRNy
+resources:
+  Resources:
+    ApiGatewayRestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Name: ${self:service}

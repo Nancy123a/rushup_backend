@@ -3,7 +3,7 @@ import logging
 import boto3
 import re
 
-dynamo_db = boto3.resource('dynamodb')
+dynamo_db = boto3.client('dynamodb')
 client = boto3.client('sns')
 
 table_name = "user_token"
@@ -78,16 +78,19 @@ def publish_message(event, context):
     return response
 
 
-
 def registerWithSNS(phone_number, token):
 
     endpointArn = retrieveEndpointArn(phone_number)
 
     updateNeeded = False
-    createNeeded = (None == endpointArn)
+    createNeeded = False
+    
+    if endpointArn is None:
+        createNeeded = True
 
     if createNeeded:
-        # No platform endpoint ARN is stored; need to call createEndpoint. \
+        # No platform endpoint ARN is stored; need to call createEndpoint.
+        print("New Phone number creating Endpoint")
         endpointArn = createEndpoint(token, phone_number)
         createNeeded = False
 
@@ -110,7 +113,7 @@ def registerWithSNS(phone_number, token):
     if createNeeded:
         createEndpoint()
 
-    print ("updateNeeded = " + updateNeeded)
+    print("updateNeeded = " + str(updateNeeded))
 
     if updateNeeded:
         # The platform endpoint is out of sync with the current data;
@@ -136,8 +139,8 @@ def createEndpoint(token, phone_number):
         )
         endpointArn = response["EndpointArn"]
     except Exception as ipe:
-        message = ipe.getErrorMessage();
-        print("Exception message: " + message)
+        message = ipe
+        print(message)
         m = re.search(".*Endpoint (arn:aws:sns[^ ]+) already exists with the same token.*", message)
         if m is not None:
             # The platform endpoint already exists for this token, but with
@@ -157,15 +160,17 @@ def createEndpoint(token, phone_number):
 def retrieveEndpointArn(phone_number):
 
     key = {
-        'phone': phone_number
+        'phone': {
+            'S': phone_number
+        }
     }
 
     result = dynamo_db.get_item(Key=key, ProjectionExpression="endpoint_arn", TableName=table_name)
 
     print json.dumps(result, encoding='ascii')
 
-    if "endpoint_arn" in result:
-        return result["endpoint_arn"]
+    if "Item" in result:
+        return result["Item"]["endpoint_arn"]["S"]
     else:
         return None
 
@@ -174,9 +179,12 @@ def retrieveEndpointArn(phone_number):
 def storeEndpointArn(phone_number, token, endpoint_arn):
 
     item = {
-        'phone': phone_number,
-        'token': token,
-        'endpoint_arn': endpoint_arn
+        'phone': {
+            'S': phone_number
+        },
+        'endpoint_arn':  {
+            'S': endpoint_arn
+        }
     }
 
     print json.dumps(item,  encoding='ascii')
