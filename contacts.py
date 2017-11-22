@@ -22,12 +22,14 @@ def sync(event, context):
     contacts = body["contacts"]
     result = []
 
+    print("we received " + str(len(contacts)) + " contacts")
+
     for contact_id, phone_number in contacts.iteritems():
-        print (str(contact_id) + str(phone_number))
+        # print (str(contact_id) + str(phone_number))
         user = check_phone(phone_number)
         if user is not None:
             result.insert(0, contact_id)
-
+    print(str(len(result)) + "/" + str(len(contacts)) + " are rushie contacts")
     body = {
         "contacts": result
     }
