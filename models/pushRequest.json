@@ -1,0 +1,9 @@
+{
+  "$schema" : "http://json-schema.org/draft-04/schema#",
+  "title" : "Push Request",
+  "type" : "object",
+  "properties" : {
+    "message" : { "type" : "string" },
+    "phone" : { "type" : "string" }
+  }
+}

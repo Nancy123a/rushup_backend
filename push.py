@@ -4,6 +4,7 @@ import boto3
 import re
 
 dynamo_db = boto3.client('dynamodb')
+cognito = boto3.client('cognito-idp')
 client = boto3.client('sns')
 
 table_name = "user_token"
@@ -21,12 +22,24 @@ def save_token(event, context):
 
     if 'token' not in body:
         logging.error("Validation Failed")
-        raise Exception("Couldn't find token parameter.")
-        return
+        response = {
+            "statusCode": 400,
+            "body": "token field is not in the request body"
+        }
+        return response
+
+    if 'phone' not in body:
+        logging.error("Validation Failed")
+        response = {
+            "statusCode": 400,
+            "body": "Phone field is not in the request body"
+        }
+        return response
 
     # Retrieve the phone number from path
-    phone_number = event["requestContext"]["authorizer"]["claims"]["phone_number"]
-    user_name = event["requestContext"]["authorizer"]["claims"]["cognito:username"]
+
+    phone_number = body["phone"]
+    # user_name = event["requestContext"]["authorizer"]["claims"]["cognito:username"]
     token = body["token"]
 
     registerWithSNS(phone_number, token)
@@ -48,21 +61,31 @@ def publish_message(event, context):
 
     if 'phone' not in body:
         logging.error("Validation Failed")
-        raise Exception("Couldn't find phone parameter.")
-        return
+        response = {
+            "statusCode": 400,
+            "body": "Phone field is not in the request body"
+        }
+        return response
 
     if 'message' not in body:
         logging.error("Validation Failed")
-        raise Exception("Couldn't find message parameter.")
-        return
+        response = {
+            "statusCode": 400,
+            "body": "message field is not in the request body"
+        }
+        return response
 
     phone = body["phone"]
     message = body["message"]
 
     endpointArn = retrieveEndpointArn(phone)
 
-    if endpointArn == None:
-        raise Exception("Sending Push to unregistered user")
+    if endpointArn is None:
+        response = {
+            "statusCode": 404,
+            "body": "Sending push to unknown user, not Rushie"
+        }
+        return response
 
     publish_response = client.publish(
         TargetArn=endpointArn,

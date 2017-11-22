@@ -33,6 +33,10 @@ provider:
       Action:
         - sns:publish
       Resource: "arn:aws:sns:eu-west-1:261650959426:app/GCM/rush_up"
+    - Effect: Allow
+      Action:
+        - cognito-idp:*
+      Resource: "*"
 custom:
   defaultStage: dev
   profiles:
@@ -41,10 +45,25 @@ custom:
   documentation:
     models:
       -
-        name: "TokenRequest"
-        description: "Endpoint platform token"
+        name: TokenRequest
+        description: "Token Request that hold current user phone number and token provided by FCM/APN"
         contentType: "application/json"
         schema: ${file(models/tokenRequest.json)}
+      -
+        name: PushRequest
+        description: "Push Request that hold both recipient phone number and Message to be sent"
+        contentType: "application/json"
+        schema: ${file(models/pushRequest.json)}
+      -
+        name: ContactSyncRequest
+        description: "Contact Request that hold all Contacts Id and Phone to be checked against database and return Rushie Contacts"
+        contentType: "application/json"
+        schema: ${file(models/contactSyncRequest.json)}
+      -
+        name: ContactSyncResponse
+        description: "Contact Response that hold all Rushie Contacts"
+        contentType: "application/json"
+        schema: ${file(models/contactSyncResponse.json)}
 functions:
   currentTime:
     handler: handler.endpoint
@@ -54,12 +73,18 @@ functions:
           method: get
   publishMessage:
     handler: push.publish_message
+    documentation:
+      summary: "Send push notification to another Rushie User"
+      description: "Push Notification to be sent to another User using Phone Number ane Message"
+      requestBody:
+        description: "Push Notification using PushRequest"
+      requestModels:
+        "application/json": PushRequest
     events:
       - http:
           path: publish
           method: post
-          authorizer:
-            arn: arn:aws:cognito-idp:eu-west-2:261650959426:userpool/eu-west-2_9Rfg3SRNy
+          authorizer: aws_iam
   saveToken:
     handler: push.save_token
     documentation:
@@ -68,13 +93,31 @@ functions:
       requestBody:
         description: "Token Request that hold endpoint token"
       requestModels:
-        "application/json": "TokenRequest"
+        "application/json": TokenRequest
     events:
       - http:
           path: token
           method: post
-          authorizer:
-            arn: arn:aws:cognito-idp:eu-west-2:261650959426:userpool/eu-west-2_9Rfg3SRNy
+          authorizer: aws_iam
+  contactSync:
+    handler: contacts.sync
+    documentation:
+      summary: "Accept Map of Contacts Ids with phone Number and return a list of Rushie Contacts"
+      description: "Compare Contacts against Rushie DB"
+      requestBody:
+        description: "Contact Sync Request that hold a map of Ids and Phone numbers"
+      requestModels:
+        "application/json": ContactSyncRequest
+      methodResponses:
+        -
+          statusCode: '200'
+          responseModels:
+            "application/json": ContactSyncResponse
+    events:
+      - http:
+          path: contact
+          method: post
+          authorizer: aws_iam
 resources:
   Resources:
     ApiGatewayRestApi:
