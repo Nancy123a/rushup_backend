@@ -54,7 +54,7 @@ def save_token(event, context):
 
 def publish_message(event, context):
 
-    print json.dumps(event,  encoding='ascii')
+    print(json.dumps(event,  encoding='ascii'))
 
     # Parse the body as json object
     body = json.loads(event['body'])
@@ -134,7 +134,7 @@ def registerWithSNS(phone_number, token):
         createNeeded = True
 
     if createNeeded:
-        createEndpoint()
+        createEndpoint(token, phone_number)
 
     print("updateNeeded = " + str(updateNeeded))
 

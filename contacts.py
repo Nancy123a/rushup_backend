@@ -5,6 +5,7 @@ dynamo_db = boto3.client('dynamodb')
 
 table_name = "user_token"
 
+
 def sync(event, context):
 
     print json.dumps(event,  encoding='ascii')
@@ -24,11 +25,12 @@ def sync(event, context):
 
     print("we received " + str(len(contacts)) + " contacts")
 
-    for contact_id, phone_number in contacts.iteritems():
-        # print (str(contact_id) + str(phone_number))
-        user = check_phone(phone_number)
+    for contact in contacts:
+        # print (json.dumps(contact,  encoding='ascii'))
+        user = check_phone(contact["phone"])
         if user is not None:
-            result.insert(0, contact_id)
+            if contact["contact_id"] not in result:
+                result.insert(0, contact["contact_id"])
     print(str(len(result)) + "/" + str(len(contacts)) + " are rushie contacts")
     body = {
         "contacts": result
