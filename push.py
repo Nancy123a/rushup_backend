@@ -213,3 +213,27 @@ def storeEndpointArn(phone_number, token, endpoint_arn):
     print json.dumps(item,  encoding='ascii')
 
     dynamo_db.put_item(Item=item, TableName=table_name)
+
+
+# Get Phone Number and username from security context.
+def get_user(cognitoAuthenticationProvider):
+
+    # cognito-idp.eu-west-2.amazonaws.com/eu-west-2_9Rfg3SRNy,cognito-idp.eu-west-2.amazonaws.com/eu-west-2_9Rfg3SRNy:CognitoSignIn:4b586b11-0e4d-4690-b30f-0b50ce31beda
+    m = re.search(".*/(.+):CognitoSignIn:(.+)", cognitoAuthenticationProvider)
+    if m is not None:
+        userPoolId = m.group(1)
+        sub = m.group(2)
+    else:
+        # Rethrow the exception, the input is actually bad.
+        raise "Unable to extract user from security Provider"
+
+    response = client.list_users(
+        UserPoolId=userPoolId,
+        AttributesToGet=[
+            'phone_number', 'username'
+        ],
+        Limit=1,
+        Filter="sub='" + sub + "'"
+    )
+    print(response)
+    return response
