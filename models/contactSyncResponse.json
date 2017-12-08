@@ -1,13 +1,21 @@
 {
   "$schema" : "http://json-schema.org/draft-04/schema#",
-  "title" : "Contact Sync Request",
+  "definitions": {
+    "ContactResponse": {
+      "type": "object",
+      "properties": {
+        "contact_id" : { "type": "string" },
+        "user_name"  : { "type": "string" }
+      },
+      "required": ["contact_id", "user_name"]
+    }
+  },
+  "title" : "Contact Sync Response",
   "type" : "object",
   "properties" : {
     "contacts" : {
       "type": "array",
-      "items": {
-        "type": "string"
-      },
+      "items":  { "$ref": "#/definitions/ContactResponse" },
       "uniqueItems": true
     }
   }

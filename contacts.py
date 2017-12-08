@@ -27,10 +27,13 @@ def sync(event, context):
 
     for contact in contacts:
         # print (json.dumps(contact,  encoding='ascii'))
-        user = check_phone(contact["phone"])
-        if user is not None:
+        user_name = check_phone(contact["phone"])
+        if user_name is not None:
             if contact["contact_id"] not in result:
-                result.insert(0, contact["contact_id"])
+                response = dict()
+                response["contact_id"] = contact["contact_id"]
+                response["user_name"] = user_name
+                result.append(response)
     print(str(len(result)) + "/" + str(len(contacts)) + " are rushie contacts")
     body = {
         "contacts": result
@@ -53,11 +56,11 @@ def check_phone(phone_number):
         }
     }
 
-    result = dynamo_db.get_item(Key=key, ProjectionExpression="phone", TableName=table_name)
+    result = dynamo_db.get_item(Key=key, ProjectionExpression="username", TableName=table_name)
 
     # print json.dumps(result, encoding='ascii')
 
     if "Item" in result:
-        return result["Item"]["phone"]["S"]
+        return result["Item"]["username"]["S"]
     else:
         return None
