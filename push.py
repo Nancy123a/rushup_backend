@@ -12,13 +12,14 @@ table_name = "user_token"
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-
 def save_token(event, context):
 
     print json.dumps(event,  encoding='ascii')
 
     # Parse the body as json object
     body = json.loads(event['body'])
+
+    user_name, phone_number = get_user(event["requestContext"]["identity"]["cognitoAuthenticationProvider"])
 
     if 'token' not in body:
         logging.error("Validation Failed")
@@ -28,21 +29,10 @@ def save_token(event, context):
         }
         return response
 
-    if 'phone' not in body:
-        logging.error("Validation Failed")
-        response = {
-            "statusCode": 400,
-            "body": "Phone field is not in the request body"
-        }
-        return response
-
-    # Retrieve the phone number from path
-
-    phone_number = body["phone"]
     # user_name = event["requestContext"]["authorizer"]["claims"]["cognito:username"]
     token = body["token"]
 
-    registerWithSNS(phone_number, token)
+    registerWithSNS(phone_number, user_name, token)
 
     response = {
         "statusCode": 201,
@@ -101,7 +91,7 @@ def publish_message(event, context):
     return response
 
 
-def registerWithSNS(phone_number, token):
+def registerWithSNS(phone_number, user_name, token):
 
     endpointArn = retrieveEndpointArn(phone_number)
 
@@ -114,7 +104,7 @@ def registerWithSNS(phone_number, token):
     if createNeeded:
         # No platform endpoint ARN is stored; need to call createEndpoint.
         print("New Phone number creating Endpoint")
-        endpointArn = createEndpoint(token, phone_number)
+        endpointArn = createEndpoint(phone_number, user_name, token)
         createNeeded = False
 
     print("Retrieving platform endpoint data...")
@@ -134,7 +124,7 @@ def registerWithSNS(phone_number, token):
         createNeeded = True
 
     if createNeeded:
-        createEndpoint(token, phone_number)
+        createEndpoint(phone_number, user_name, token)
 
     print("updateNeeded = " + str(updateNeeded))
 
@@ -150,8 +140,9 @@ def registerWithSNS(phone_number, token):
             }
         )
 
+
 # @return never null
-def createEndpoint(token, phone_number):
+def createEndpoint(phone_number, user_name, token):
     endpointArn = None
     try:
         print("Creating platform endpoint with token " + token)
@@ -174,7 +165,7 @@ def createEndpoint(token, phone_number):
         else:
             # Rethrow the exception, the input is actually bad.
             raise ipe
-    storeEndpointArn(phone_number, token, endpointArn)
+    storeEndpointArn(phone_number, user_name, token, endpointArn)
     return endpointArn
 
 
@@ -199,7 +190,7 @@ def retrieveEndpointArn(phone_number):
 
 
 #  Stores the platform endpoint ARN in permanent storage for lookup next time.
-def storeEndpointArn(phone_number, token, endpoint_arn):
+def storeEndpointArn(phone_number, user_name, token, endpoint_arn):
 
     item = {
         'phone': {
@@ -207,6 +198,12 @@ def storeEndpointArn(phone_number, token, endpoint_arn):
         },
         'endpoint_arn':  {
             'S': endpoint_arn
+        },
+        'username': {
+            'S': user_name
+        },
+        'token': {
+            'S': token
         }
     }
 
@@ -215,7 +212,8 @@ def storeEndpointArn(phone_number, token, endpoint_arn):
     dynamo_db.put_item(Item=item, TableName=table_name)
 
 
-# Get Phone Number and username from security context.
+# Get User from security context.
+# May return null if user not found
 def get_user(cognitoAuthenticationProvider):
 
     # cognito-idp.eu-west-2.amazonaws.com/eu-west-2_9Rfg3SRNy,cognito-idp.eu-west-2.amazonaws.com/eu-west-2_9Rfg3SRNy:CognitoSignIn:4b586b11-0e4d-4690-b30f-0b50ce31beda
@@ -227,13 +225,25 @@ def get_user(cognitoAuthenticationProvider):
         # Rethrow the exception, the input is actually bad.
         raise "Unable to extract user from security Provider"
 
-    response = client.list_users(
+    print("userPoolId" + userPoolId)
+
+    cognito_filter = "sub='" + sub + "'"
+
+    print("filter  " + cognito_filter)
+
+    response = cognito.list_users(
         UserPoolId=userPoolId,
-        AttributesToGet=[
-            'phone_number', 'username'
-        ],
+        AttributesToGet=["phone_number"],
         Limit=1,
-        Filter="sub='" + sub + "'"
+        Filter=cognito_filter
     )
-    print(response)
-    return response
+    if len(response["Users"]) > 0:
+        user = response["Users"][0]
+        # This is the default phone_number
+        phone_number = None
+        for attribute in user["Attributes"]:
+            if attribute["Name"] == "phone_number":
+                phone_number = attribute["Value"]
+        return user["Username"], phone_number
+    else:
+        return None
