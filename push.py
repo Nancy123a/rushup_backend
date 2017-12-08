@@ -12,6 +12,7 @@ table_name = "user_token"
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+
 def save_token(event, context):
 
     print json.dumps(event,  encoding='ascii')
@@ -20,6 +21,9 @@ def save_token(event, context):
     body = json.loads(event['body'])
 
     user_name, phone_number = get_user(event["requestContext"]["identity"]["cognitoAuthenticationProvider"])
+
+    if user_name is None:
+        raise "Unable to extract user from security Provider"
 
     if 'token' not in body:
         logging.error("Validation Failed")
@@ -244,6 +248,8 @@ def get_user(cognitoAuthenticationProvider):
         for attribute in user["Attributes"]:
             if attribute["Name"] == "phone_number":
                 phone_number = attribute["Value"]
+        if phone_number is None:
+            return None, None
         return user["Username"], phone_number
     else:
-        return None
+        return None, None
