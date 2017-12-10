@@ -2,10 +2,11 @@ import json
 import logging
 import boto3
 import re
+import os
 
 dynamo_db = boto3.client('dynamodb')
 cognito = boto3.client('cognito-idp')
-client = boto3.client('sns')
+sns = boto3.client('sns')
 
 table_name = "user_token"
 
@@ -22,6 +23,8 @@ def save_token(event, context):
 
     user_name, phone_number = get_user(event["requestContext"]["identity"]["cognitoAuthenticationProvider"])
 
+    identity_id = event["requestContext"]["identity"]["cognitoIdentityId"]
+
     if user_name is None:
         raise "Unable to extract user from security Provider"
 
@@ -36,7 +39,7 @@ def save_token(event, context):
     # user_name = event["requestContext"]["authorizer"]["claims"]["cognito:username"]
     token = body["token"]
 
-    registerWithSNS(phone_number, user_name, token)
+    registerWithSNS(phone_number, user_name, token, identity_id)
 
     response = {
         "statusCode": 201,
@@ -81,7 +84,7 @@ def publish_message(event, context):
         }
         return response
 
-    publish_response = client.publish(
+    publish_response = sns.publish(
         TargetArn=endpointArn,
         Message=message
     )
@@ -95,7 +98,7 @@ def publish_message(event, context):
     return response
 
 
-def registerWithSNS(phone_number, user_name, token):
+def registerWithSNS(phone_number, user_name, token, identity_id):
 
     endpointArn = retrieveEndpointArn(phone_number)
 
@@ -108,14 +111,14 @@ def registerWithSNS(phone_number, user_name, token):
     if createNeeded:
         # No platform endpoint ARN is stored; need to call createEndpoint.
         print("New Phone number creating Endpoint")
-        endpointArn = createEndpoint(phone_number, user_name, token)
+        endpointArn = createEndpoint(phone_number, user_name, token, identity_id)
         createNeeded = False
 
     print("Retrieving platform endpoint data...")
     # Look up the platform endpoint and make sure the data in it is current, even if
     # it was just created.
     try:
-        response = client.get_endpoint_attributes(EndpointArn=endpointArn)
+        response = sns.get_endpoint_attributes(EndpointArn=endpointArn)
         attributes = response["Attributes"]
         if attributes["Token"] != token:
             updateNeeded = True
@@ -128,7 +131,7 @@ def registerWithSNS(phone_number, user_name, token):
         createNeeded = True
 
     if createNeeded:
-        createEndpoint(phone_number, user_name, token)
+        createEndpoint(phone_number, user_name, token, identity_id)
 
     print("updateNeeded = " + str(updateNeeded))
 
@@ -136,7 +139,7 @@ def registerWithSNS(phone_number, user_name, token):
         # The platform endpoint is out of sync with the current data;
         # update the token and enable it.
         print("Updating platform endpoint " + endpointArn)
-        response = client.set_endpoint_attributes(
+        response = sns.set_endpoint_attributes(
             EndpointArn=endpointArn,
             Attributes={
                 'Token': token,
@@ -146,12 +149,12 @@ def registerWithSNS(phone_number, user_name, token):
 
 
 # @return never null
-def createEndpoint(phone_number, user_name, token):
+def createEndpoint(phone_number, user_name, token, identity_id):
     endpointArn = None
     try:
         print("Creating platform endpoint with token " + token)
-        response = client.create_platform_endpoint(
-            PlatformApplicationArn='arn:aws:sns:eu-west-1:261650959426:app/GCM/rush_up',
+        response = sns.create_platform_endpoint(
+            PlatformApplicationArn=os.environ['androidPlatformApplicationArn'],
             Token=token,
             CustomUserData=phone_number
         )
@@ -169,7 +172,7 @@ def createEndpoint(phone_number, user_name, token):
         else:
             # Rethrow the exception, the input is actually bad.
             raise ipe
-    storeEndpointArn(phone_number, user_name, token, endpointArn)
+    storeEndpointArn(phone_number, user_name, token, identity_id, endpointArn)
     return endpointArn
 
 
@@ -194,7 +197,7 @@ def retrieveEndpointArn(phone_number):
 
 
 #  Stores the platform endpoint ARN in permanent storage for lookup next time.
-def storeEndpointArn(phone_number, user_name, token, endpoint_arn):
+def storeEndpointArn(phone_number, user_name, token, identity_id, endpoint_arn):
 
     item = {
         'phone': {
@@ -205,6 +208,9 @@ def storeEndpointArn(phone_number, user_name, token, endpoint_arn):
         },
         'username': {
             'S': user_name
+        },
+        'identity_id': {
+            'S': identity_id
         },
         'token': {
             'S': token
