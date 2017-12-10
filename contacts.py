@@ -1,8 +1,9 @@
 import json
 import boto3
+import os
 
 dynamo_db = boto3.client('dynamodb')
-
+cognito_sync = boto3.client('cognito-sync')
 table_name = "user_token"
 
 
@@ -27,12 +28,13 @@ def sync(event, context):
 
     for contact in contacts:
         # print (json.dumps(contact,  encoding='ascii'))
-        user_name = check_phone(contact["phone"])
-        if user_name is not None:
+        user = check_phone(contact["phone"])
+        if user is not None:
             if contact["contact_id"] not in result:
                 response = dict()
                 response["contact_id"] = contact["contact_id"]
-                response["user_name"] = user_name
+                response["user_name"] = user["username"]
+                response["locations"] = user["locations"]
                 result.append(response)
     print(str(len(result)) + "/" + str(len(contacts)) + " are rushie contacts")
     body = {
@@ -61,6 +63,25 @@ def check_phone(phone_number):
     # print json.dumps(result, encoding='ascii')
 
     if "Item" in result:
-        return result["Item"]["username"]["S"]
+        user = dict()
+        user["username"] = result["Item"]["username"]["S"]
+        user["locations"] = get_user_locations(result["Item"]["identity_id"]["S"])
+        return user
     else:
         return None
+
+def get_user_locations(identity_id):
+    locations = []
+    response = cognito_sync.list_records(
+        IdentityPoolId=os.environ['identityPoolId'],
+        IdentityId=identity_id,
+        DatasetName=os.environ['locationDatasetName']
+    )
+
+    for record in response['Records']:
+        location = dict()
+        location['key'] = record['Key']
+        location['value'] = record['Value']
+        locations.append(json.dumps(location))
+
+    return locations
