@@ -2,6 +2,7 @@ import json
 import boto3
 import os
 
+
 dynamo_db = boto3.client('dynamodb')
 cognito_sync = boto3.client('cognito-sync')
 table_name = "user_token"
@@ -12,16 +13,15 @@ def sync(event, context):
     print json.dumps(event,  encoding='ascii')
 
     # Parse the body as json object
-    body = json.loads(event['body'])
+    contacts = json.loads(event['body'])
 
-    if 'contacts' not in body:
+    if not isinstance(contacts, list):
         response = {
             "statusCode": 400,
-            "body": "contacts is not in the request body"
+            "body": "contacts is not in the request body or not a list"
         }
         return response
 
-    contacts = body["contacts"]
     result = []
 
     print("we received " + str(len(contacts)) + " contacts")
@@ -37,13 +37,10 @@ def sync(event, context):
                 response["locations"] = user["locations"]
                 result.append(response)
     print(str(len(result)) + "/" + str(len(contacts)) + " are rushie contacts")
-    body = {
-        "contacts": result
-    }
 
     response = {
         "statusCode": 200,
-        "body": json.dumps(body)
+        "body": json.dumps(result)
     }
 
     return response
@@ -58,7 +55,7 @@ def check_phone(phone_number):
         }
     }
 
-    result = dynamo_db.get_item(Key=key, ProjectionExpression="username", TableName=table_name)
+    result = dynamo_db.get_item(Key=key, ProjectionExpression="username,identity_id", TableName=table_name)
 
     # print json.dumps(result, encoding='ascii')
 
@@ -69,6 +66,7 @@ def check_phone(phone_number):
         return user
     else:
         return None
+
 
 def get_user_locations(identity_id):
     locations = []
@@ -82,6 +80,6 @@ def get_user_locations(identity_id):
         location = dict()
         location['key'] = record['Key']
         location['value'] = record['Value']
-        locations.append(json.dumps(location))
+        locations.append(location)
 
     return locations

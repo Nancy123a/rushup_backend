@@ -1,22 +1,28 @@
 {
   "$schema" : "http://json-schema.org/draft-04/schema#",
   "definitions": {
+    "Location": {
+      "type": "object",
+      "properties": {
+        "key" : { "type": "string"},
+        "value" : { "type": "string"}
+      }
+    },
     "ContactResponse": {
       "type": "object",
       "properties": {
         "contact_id" : { "type": "string" },
-        "user_name"  : { "type": "string" }
+        "user_name"  : { "type": "string" },
+        "locations" : {
+          "type" : "array",
+          "items" : { "$ref": "#/definitions/Location"}
+        }
       },
       "required": ["contact_id", "user_name"]
     }
   },
   "title" : "Contact Sync Response",
-  "type" : "object",
-  "properties" : {
-    "contacts" : {
-      "type": "array",
-      "items":  { "$ref": "#/definitions/ContactResponse" },
-      "uniqueItems": true
-    }
-  }
+  "type" : "array",
+  "items" : { "$ref": "#/definitions/ContactResponse" },
+  "uniqueItems": true
 }
