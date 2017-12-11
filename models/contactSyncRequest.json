@@ -11,12 +11,7 @@
     }
   },
   "title" : "Contact Sync Request",
-  "type" : "object",
-  "properties" : {
-    "contacts" : {
-      "type": "array",
-      "items":  { "$ref": "#/definitions/ContactRequest" },
-      "uniqueItems": true
-    }
-  }
+  "type" : "array",
+  "items":  { "$ref": "#/definitions/ContactRequest" },
+  "uniqueItems": true
 }

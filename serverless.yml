@@ -38,6 +38,10 @@ provider:
       Action:
         - cognito-idp:*
       Resource: "*"
+    - Effect: Allow
+      Action:
+        - cognito-sync:ListRecords
+      Resource: "arn:aws:cognito-sync:*:*:identitypool/*/identity/*/dataset/*"
 custom:
   defaultStage: prod
   profiles:
