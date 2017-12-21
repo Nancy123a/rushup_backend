@@ -3,6 +3,7 @@
   "definitions": {
     "Location": {
       "type": "object",
+      "javaInterfaces": ["java.io.Serializable"],
       "properties": {
         "key" : { "type": "string"},
         "value" : { "type": "string"}
@@ -10,8 +11,9 @@
     },
     "ContactResponse": {
       "type": "object",
+      "javaInterfaces": ["java.io.Serializable"],
       "properties": {
-        "contact_id" : { "type": "string" },
+        "phone_number" : { "type": "string" },
         "user_name"  : { "type": "string" },
         "locations" : {
           "type" : "array",
@@ -23,6 +25,7 @@
   },
   "title" : "Contact Sync Response",
   "type" : "array",
+  "javaInterfaces": ["java.io.Serializable"],
   "items" : { "$ref": "#/definitions/ContactResponse" },
   "uniqueItems": true
 }

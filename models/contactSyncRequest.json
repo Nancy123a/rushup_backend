@@ -1,17 +1,7 @@
 {
   "$schema" : "http://json-schema.org/draft-04/schema#",
-  "definitions": {
-    "ContactRequest": {
-      "type": "object",
-      "properties": {
-        "contact_id": { "type": "string" },
-        "phone":      { "type": "string" }
-      },
-      "required": ["contact_id", "phone"]
-    }
-  },
   "title" : "Contact Sync Request",
   "type" : "array",
-  "items":  { "$ref": "#/definitions/ContactRequest" },
+  "items":  { "type": "string" },
   "uniqueItems": true
 }

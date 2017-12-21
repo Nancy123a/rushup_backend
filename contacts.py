@@ -26,13 +26,13 @@ def sync(event, context):
 
     print("we received " + str(len(contacts)) + " contacts")
 
-    for contact in contacts:
+    for phone_number in contacts:
         # print (json.dumps(contact,  encoding='ascii'))
-        user = check_phone(contact["phone"])
+        user = check_phone(phone_number)
         if user is not None:
-            if contact["contact_id"] not in result:
+            if phone_number not in result:
                 response = dict()
-                response["contact_id"] = contact["contact_id"]
+                response["phone_number"] = phone_number
                 response["user_name"] = user["username"]
                 response["locations"] = user["locations"]
                 result.append(response)
@@ -61,8 +61,17 @@ def check_phone(phone_number):
 
     if "Item" in result:
         user = dict()
-        user["username"] = result["Item"]["username"]["S"]
-        user["locations"] = get_user_locations(result["Item"]["identity_id"]["S"])
+
+        if 'username' in result["Item"]:
+            user["username"] = result["Item"]["username"]["S"]
+        else:
+            user["username"] = 'unknown'
+
+        if 'identity_id' in result["Item"]:
+            user["locations"] = get_user_locations(result["Item"]["identity_id"]["S"])
+        else:
+            user["locations"] = []
+
         return user
     else:
         return None
