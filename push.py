@@ -73,7 +73,19 @@ def publish_message(event, context):
         return response
 
     phone = body["phone"]
-    message = body["message"]
+    message = dict()
+    message["message"] = body["message"]
+    if 'type' not in body:
+        message["type"] = "delivery"
+    else:
+        message["type"] = body["type"]
+        message["message_type"] = body["type"]
+    data = dict()
+    data["data"] = message
+    gcm = dict()
+    gcm["GCM"] = json.dumps(data)
+
+    print(json.dumps(gcm,  encoding='ascii'))
 
     endpointArn = retrieveEndpointArn(phone)
 
@@ -86,7 +98,8 @@ def publish_message(event, context):
 
     publish_response = sns.publish(
         TargetArn=endpointArn,
-        Message=message
+        Message=json.dumps(gcm),
+        MessageStructure="json"
     )
 
 
@@ -96,6 +109,7 @@ def publish_message(event, context):
     }
 
     return response
+
 
 
 def registerWithSNS(phone_number, user_name, token, identity_id):
