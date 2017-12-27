@@ -55,6 +55,9 @@ def check_phone(phone_number):
         }
     }
 
+    if not phone_number:
+        return None
+
     result = dynamo_db.get_item(Key=key, ProjectionExpression="username,identity_id", TableName=table_name)
 
     # print json.dumps(result, encoding='ascii')
