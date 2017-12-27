@@ -72,6 +72,13 @@ functions:
       - http:
           path: ping
           method: get
+  saveDelivery:
+    handler: delivery.save_delivery
+    events:
+      - http:
+          path: delivery
+          method: post
+          authorizer: aws_iam
   publishMessage:
     handler: push.publish_message
     events:

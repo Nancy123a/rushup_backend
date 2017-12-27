@@ -111,7 +111,6 @@ def publish_message(event, context):
     return response
 
 
-
 def registerWithSNS(phone_number, user_name, token, identity_id):
 
     endpointArn = retrieveEndpointArn(phone_number)
