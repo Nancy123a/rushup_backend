@@ -3,6 +3,7 @@ import json
 import uuid
 import time
 import push
+import utility
 
 dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
 
@@ -17,7 +18,7 @@ def save_delivery(event, context):
 
     if "id"  not in delivery:
         delivery["id"] = str(uuid.uuid1())
-        delivery["status"] = "pending"
+        delivery["delivery_status"] = "pending"
         delivery["delivery_date"] = int(time.time())
 
     table.put_item(
@@ -45,7 +46,7 @@ def update_delivery_status(event, context):
 
     body = json.loads(event['body'])
 
-    status = body["status"]
+    delivery_status = body["delivery_status"]
 
     key = {
         'id': delivery_id
@@ -53,15 +54,15 @@ def update_delivery_status(event, context):
 
     table.update_item(
         Key=key,
-        UpdateExpression='SET status = :val1',
+        UpdateExpression='SET delivery_status = :v',
         ExpressionAttributeValues={
-            'val1': status
+            ':v': delivery_status
         }
     )
 
     delivery = retrieve_delivery(delivery_id)
 
-    if status == "confirmed":
+    if delivery_status == "confirmed":
         push.push_message(delivery, delivery["from"], "delivery_update")
     else:
         push.push_message(delivery, delivery["to"], "delivery_update")
@@ -96,6 +97,8 @@ def retrieve_delivery(delivery_id):
     }
 
     result = table.get_item(Key=key)
+
+    result = utility.replace_decimals(result)
 
     print json.dumps(result, encoding='ascii')
 

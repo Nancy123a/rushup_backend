@@ -3,6 +3,6 @@
   "title" : "Delivery Status Request",
   "type" : "object",
   "properties" : {
-    "status" : { "type" : "string" }
+    "delivery_status" : { "type" : "string" }
   }
 }
