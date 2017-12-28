@@ -4,9 +4,10 @@ import uuid
 import time
 import push
 
-dynamodb = boto3.resource('dynamodb', region_name='eu-west-1')
+dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
 
-table = dynamodb.Table('delivery')
+table = dynamo_db.Table('delivery')
+
 
 def save_delivery(event, context):
 
@@ -26,15 +27,7 @@ def save_delivery(event, context):
     # print(delivery.from)
     print(delivery)
 
-    push_request = dict()
-    push_request["message"] = delivery
-    push_request["type"] = "delivery_request"
-    push_request["phone"] = delivery["to"]
-
-    body = dict()
-    body["body"] = json.dumps(push_request)
-
-    push.publish_message(body, context)
+    push.push_message(delivery, delivery["to"], "delivery_request")
 
     response = {
         "statusCode": 201,
@@ -66,6 +59,14 @@ def update_delivery_status(event, context):
         }
     )
 
+    delivery = retrieve_delivery(delivery_id)
+
+    if status == "confirmed":
+        push.push_message(delivery, delivery["from"], "delivery_update")
+    else:
+        push.push_message(delivery, delivery["to"], "delivery_update")
+        push.push_message(delivery, delivery["from"], "delivery_update")
+
     response = {
         "statusCode": 200,
         "body": json.dumps({})
@@ -74,7 +75,7 @@ def update_delivery_status(event, context):
     return response
 
 
-def retrieveDelivery(delivery_id):
+def retrieve_delivery(delivery_id):
 
     key = {
         'id': delivery_id
