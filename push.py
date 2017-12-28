@@ -72,16 +72,27 @@ def publish_message(event, context):
         }
         return response
 
+    message = body["message"]
     phone = body["phone"]
-    message = dict()
-    message["message"] = body["message"]
+    message_type = "delivery"
+
     if 'type' not in body:
-        message["type"] = "delivery"
+        message_type = "delivery"
     else:
-        message["type"] = body["type"]
-        message["message_type"] = body["type"]
+        message_type = body["type"]
+
+    return push_message(message, phone, message_type)
+
+
+def push_message(message, phone, message_type):
+
+    push = dict()
+    push["message"] = message
+    push["type"] = message_type
+
     data = dict()
-    data["data"] = message
+    data["data"] = push
+
     gcm = dict()
     gcm["GCM"] = json.dumps(data)
 
@@ -101,7 +112,6 @@ def publish_message(event, context):
         Message=json.dumps(gcm),
         MessageStructure="json"
     )
-
 
     response = {
         "statusCode": 200,
