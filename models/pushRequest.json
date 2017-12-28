@@ -4,6 +4,7 @@
   "type" : "object",
   "properties" : {
     "message" : { "type" : "string" },
-    "phone" : { "type" : "string" }
+    "phone" : { "type" : "string" },
+    "type" : { "type" : "string" }
   }
 }

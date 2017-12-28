@@ -1,0 +1,32 @@
+{
+  "$schema" : "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "Location": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "string"
+        },
+        "longitude": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "title" : "Delivery Request",
+  "type" : "object",
+  "properties" : {
+    "id" : {"type": "string" },
+    "from" : { "type" : "string" },
+    "to" : { "type" : "string" },
+    "dropoff_location" : { "$ref": "#/definitions/Location" },
+    "pickup_location" : { "$ref": "#/definitions/Location" },
+    "dropoff_name" : { "type" : "string" } ,
+    "pickup_name" : { "type" : "string"} ,
+    "status" : {"type" : "string"},
+    "delivery_date" : { "type" : "number" }
+  }
+}

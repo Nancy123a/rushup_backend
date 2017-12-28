@@ -23,7 +23,9 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:eu-west-1:261650959426:table/user_token"
+      Resource:
+        - "arn:aws:dynamodb:eu-west-1:261650959426:table/user_token"
+        - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery"
     - Effect: Allow
       Action:
         - sns:SetEndpointAttributes
@@ -65,6 +67,14 @@ custom:
         name: ContactSyncResponse
         contentType: "application/json"
         schema: ${file(models/contactSyncResponse.json)}
+      -
+        name: DeliveryRequest
+        contentType: "application/json"
+        schema: ${file(models/deliveryRequest.json)}
+      -
+        name: DeliveryStatusRequest
+        contentType: "application/json"
+        schema: ${file(models/deliveryStatusRequest.json)}
 functions:
   currentTime:
     handler: handler.endpoint
@@ -79,6 +89,29 @@ functions:
           path: delivery
           method: post
           authorizer: aws_iam
+          documentation:
+            summary: "Save an approved delivery"
+            requestModels:
+              "application/json": DeliveryRequest
+            methodResponses:
+              - statusCode: '201'
+                responseModels:
+                  "application/json": DeliveryRequest
+  updateDeliveryStatus:
+    handler: delivery.update_delivery_status
+    events:
+      - http:
+          path: delivery/{delivery_id}
+          method: put
+          request:
+            parameters:
+               paths:
+                 delivery_id: true
+          authorizer: aws_iam
+          documentation:
+            summary: "Update delivery report status"
+            requestModels:
+              "application/json": DeliveryStatusRequest
   publishMessage:
     handler: push.publish_message
     events:
