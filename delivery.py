@@ -75,6 +75,20 @@ def update_delivery_status(event, context):
     return response
 
 
+def get_delivery(event, context):
+
+    print json.dumps(event,  encoding='ascii')
+    delivery_id = event["pathParameters"]["delivery_id"]
+    delivery = retrieve_delivery(delivery_id)
+
+    response = {
+        "statusCode": 200,
+        "body": json.dumps(delivery)
+    }
+
+    return response
+
+
 def retrieve_delivery(delivery_id):
 
     key = {

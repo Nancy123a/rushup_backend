@@ -112,6 +112,23 @@ functions:
             summary: "Update delivery report status"
             requestModels:
               "application/json": DeliveryStatusRequest
+  getDelivery:
+    handler: delivery.get_delivery
+    events:
+      - http:
+          path: delivery/{delivery_id}
+          method: get
+          request:
+            parameters:
+               paths:
+                 delivery_id: true
+          authorizer: aws_iam
+          documentation:
+            summary: "Get Delivery"
+            methodResponses:
+              - statusCode: '200'
+                responseModels:
+                  "application/json": DeliveryRequest
   publishMessage:
     handler: push.publish_message
     events:
