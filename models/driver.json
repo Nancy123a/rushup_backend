@@ -1,0 +1,24 @@
+{
+  "$schema" : "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "Location": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "string"
+        },
+        "longitude": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "title" : "Driver",
+  "type" : "object",
+  "properties" : {
+    "identity_id" : {"type": "string" },
+    "username" : { "type" : "string" },
+    "phone" : { "type" : "string" },
+    "driver_location" : { "$ref": "#/definitions/Location" }
+  }
+}

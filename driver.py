@@ -1,10 +1,42 @@
 import json
 import boto3
+import urllib
 
-dynamo_db = boto3.client('dynamodb')
-cognito = boto3.client('cognito-idp')
+dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
+table = dynamo_db.Table('driver_token')
 
-table_name = 'driver_token'
+
+def get_driver(event, context):
+
+    print json.dumps(event, encoding='ascii')
+
+    identity_id = urllib.unquote(event["pathParameters"]["driver_id"])
+
+    driver = retrieve_driver(identity_id)
+
+    response = {
+        "statusCode": 201,
+        "body": json.dumps(driver)
+    }
+
+    return response
+
+
+def retrieve_driver(identity_id):
+
+    result = table.get_item(
+        Key={
+            'identity_id': identity_id
+        },
+        ProjectionExpression="identity_id,phone,driver_location,username"
+    )
+
+    print json.dumps(result, encoding='ascii')
+
+    if "Item" in result:
+        return result["Item"]
+    else:
+        return None
 
 
 def update_location(event, context):
@@ -16,25 +48,16 @@ def update_location(event, context):
 
     identity_id = event["requestContext"]["identity"]["cognitoIdentityId"]
 
-    dynamo_db.update_item(
-        TableName=table_name,
-        Key={
-            'identity_id': {
-                'S': identity_id
-            }
-        },
-        AttributeUpdates={
-            'location': {
-                'M': {
-                    'latitude': {'N': body["latitude"]},
-                    'longitude': {'N': body["longitude"]}
-                }
-            }
+    table.update_item(
+        Key={'identity_id':  identity_id},
+        UpdateExpression='SET driver_location = :l',
+        ExpressionAttributeValues={
+            ':l': body
         }
     )
 
     response = {
-        "statusCode": 201,
+        "statusCode": 200,
         "body": json.dumps({})
     }
 

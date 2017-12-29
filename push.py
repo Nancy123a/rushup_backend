@@ -8,6 +8,7 @@ cognito = boto3.client('cognito-idp')
 sns = boto3.client('sns')
 
 table_name = os.environ['table_name']
+table_key = os.environ['table_key']
 
 
 def save_token(event, context):
@@ -124,7 +125,10 @@ def push_message(message, phone, message_type):
 
 def registerWithSNS(phone_number, user_name, token, identity_id):
 
-    endpointArn = retrieveEndpointArn(phone_number)
+    if table_key == "phone":
+        endpointArn = retrieveEndpointArn(phone_number)
+    else:
+        endpointArn = retrieveEndpointArn(identity_id)
 
     updateNeeded = False
     createNeeded = False
@@ -202,11 +206,10 @@ def createEndpoint(phone_number, user_name, token, identity_id):
 
 # @return the ARN the app was registered under previously, or null if no
 #        platform endpoint ARN is stored.
-def retrieveEndpointArn(phone_number):
-
+def retrieveEndpointArn(key):
     key = {
-        'phone': {
-            'S': phone_number
+        table_key: {
+            'S': key
         }
     }
 

@@ -71,7 +71,7 @@ custom:
       -
         name: DriverRequest
         contentType: "application/json"
-        schema: ${file(models/driverLocationrRequest.json)}
+        schema: ${file(models/driverLocationRequest.json)}
       -
         name: DeliveryRequest
         contentType: "application/json"
@@ -89,6 +89,9 @@ functions:
           method: get
   saveDelivery:
     handler: delivery.save_delivery
+    environment:
+      table_name: user_token
+      table_key: phone
     events:
       - http:
           path: delivery
@@ -104,6 +107,9 @@ functions:
                   "application/json": DeliveryRequest
   updateDeliveryStatus:
     handler: delivery.update_delivery_status
+    environment:
+      table_name: user_token
+      table_key: phone
     events:
       - http:
           path: delivery/{delivery_id}
@@ -119,6 +125,9 @@ functions:
               "application/json": DeliveryStatusRequest
   getDelivery:
     handler: delivery.get_delivery
+    environment:
+      table_name: user_token
+      table_key: phone
     events:
       - http:
           path: delivery/{delivery_id}
@@ -136,6 +145,9 @@ functions:
                   "application/json": DeliveryRequest
   assignDelivery:
     handler: delivery.assign_delivery
+    environment:
+      table_name: user_token
+      table_key: phone
     events:
       - http:
           path: delivery/{delivery_id}/assign
@@ -151,6 +163,7 @@ functions:
     handler: push.save_token
     environment:
       table_name: user_token
+      table_key: phone
     events:
       - http:
           path: rushie/token
@@ -172,6 +185,7 @@ functions:
     handler: push.publish_message
     environment:
       table_name: user_token
+      table_key: phone
     events:
       - http:
           path: publish
@@ -185,6 +199,7 @@ functions:
     handler: push.save_token
     environment:
       table_name: driver_token
+      table_key: identity_id
     events:
       - http:
           path: driver/token
@@ -205,6 +220,20 @@ functions:
             summary: "Update Driver Location"
             requestModels:
               "application/json": DriverRequest
+  getDriver:
+    handler: driver.get_driver
+    events:
+      - http:
+          path: driver/{driver_id}
+          request:
+            parameters:
+              paths:
+                driver_id: true
+          method: get
+          authorizer: aws_iam
+          documentation:
+            summary: "Get Driver by id"
+
   contactSync:
     handler: contacts.sync
     events:

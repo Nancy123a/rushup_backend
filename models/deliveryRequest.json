@@ -14,6 +14,26 @@
           "type": "string"
         }
       }
+    },
+    "DriverLocation": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "string"
+        },
+        "longitude": {
+          "type": "string"
+        }
+      }
+    },
+    "Driver": {
+      "type" : "object",
+      "properties" : {
+        "identity_id" : {"type": "string" },
+        "username" : { "type" : "string" },
+        "phone" : { "type" : "string" },
+        "driver_location" : { "$ref": "#/definitions/DriverLocation" }
+      }
     }
   },
   "title" : "Delivery Request",
@@ -28,8 +48,6 @@
     "pickup_name" : { "type" : "string"} ,
     "delivery_status" : {"type" : "string"},
     "delivery_date" : { "type" : "number" },
-    "driver_id" : {"type" : "string"},
-    "driver_username" : {"type" : "string"},
-    "driver_phonenumber" : {"type" : "string" }
+    "driver" : {"$ref" : "#/definitions/Driver"}
   }
 }

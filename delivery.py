@@ -3,6 +3,7 @@ import json
 import uuid
 import time
 import push
+import driver
 import utility
 
 dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
@@ -97,9 +98,9 @@ def assign_delivery(event, context):
     print json.dumps(event, encoding='ascii')
     delivery_id = event["pathParameters"]["delivery_id"]
 
-    driver_username, driver_phonenumber = push.get_user(event["requestContext"]["identity"]["cognitoAuthenticationProvider"])
-
     driver_id = event["requestContext"]["identity"]["cognitoIdentityId"]
+
+    delivery_driver = driver.retrieve_driver(driver_id)
 
     delivery_status = 'assigned'
 
@@ -109,13 +110,13 @@ def assign_delivery(event, context):
 
     table.update_item(
         Key=key,
-        UpdateExpression='SET delivery_status = :v, driver_username = :d, driver_id = :i, driver_phonenumber = :p',
+        UpdateExpression='SET delivery_status = :v, driver = :d',
         ExpressionAttributeValues={
             ':v': delivery_status,
-            ':d': driver_username,
-            ':i': driver_id,
-            ':p': driver_phonenumber
-        }
+            ':d': delivery_driver,
+            ':o': 'accepted'
+        },
+        ConditionExpression="delivery_status = :o"
     )
 
     delivery = retrieve_delivery(delivery_id)
