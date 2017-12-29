@@ -90,6 +90,47 @@ def get_delivery(event, context):
     return response
 
 
+# Method has to be called only by drivers
+# to take over a delivery to be delivered
+def assign_delivery(event, context):
+
+    print json.dumps(event, encoding='ascii')
+    delivery_id = event["pathParameters"]["delivery_id"]
+
+    driver_username, driver_phonenumber = push.get_user(event["requestContext"]["identity"]["cognitoAuthenticationProvider"])
+
+    driver_id = event["requestContext"]["identity"]["cognitoIdentityId"]
+
+    delivery_status = 'assigned'
+
+    key = {
+        'id': delivery_id
+    }
+
+    table.update_item(
+        Key=key,
+        UpdateExpression='SET delivery_status = :v, driver_username = :d, driver_id = :i, driver_phonenumber = :p',
+        ExpressionAttributeValues={
+            ':v': delivery_status,
+            ':d': driver_username,
+            ':i': driver_id,
+            ':p': driver_phonenumber
+        }
+    )
+
+    delivery = retrieve_delivery(delivery_id)
+
+    push.push_message(delivery, delivery["to"], "delivery_update")
+    push.push_message(delivery, delivery["from"], "delivery_update")
+
+    response = {
+        "statusCode": 200,
+        "body": json.dumps({})
+    }
+
+    return response
+
+
 def retrieve_delivery(delivery_id):
 
     key = {

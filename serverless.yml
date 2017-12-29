@@ -129,6 +129,19 @@ functions:
               - statusCode: '200'
                 responseModels:
                   "application/json": DeliveryRequest
+  assignDelivery:
+    handler: delivery.assign_delivery
+    events:
+      - http:
+          path: delivery/{delivery_id}/assign
+          method: put
+          request:
+            parameters:
+              paths:
+                delivery_id: true
+          authorizer: aws_iam
+          documentation:
+            summary: "Assign Delivery to a driver"
   publishMessage:
     handler: push.publish_message
     events:

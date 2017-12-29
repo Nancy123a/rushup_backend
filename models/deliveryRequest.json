@@ -27,6 +27,9 @@
     "dropoff_name" : { "type" : "string" } ,
     "pickup_name" : { "type" : "string"} ,
     "delivery_status" : {"type" : "string"},
-    "delivery_date" : { "type" : "number" }
+    "delivery_date" : { "type" : "number" },
+    "driver_id" : {"type" : "string"},
+    "driver_username" : {"type" : "string"},
+    "driver_phonenumber" : {"type" : "string" }
   }
 }
