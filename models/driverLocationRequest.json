@@ -1,0 +1,9 @@
+{
+  "$schema" : "http://json-schema.org/draft-04/schema#",
+  "title" : "Driver Location Request",
+  "type" : "object",
+  "properties" : {
+    "latitude" : { "type" : "number" },
+    "longitude" : { "type" : "number" }
+  }
+}

@@ -1,5 +1,4 @@
 import json
-import logging
 import boto3
 import re
 import os
@@ -8,10 +7,7 @@ dynamo_db = boto3.client('dynamodb')
 cognito = boto3.client('cognito-idp')
 sns = boto3.client('sns')
 
-table_name = "user_token"
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+table_name = os.environ['table_name']
 
 
 def save_token(event, context):
@@ -26,10 +22,15 @@ def save_token(event, context):
     identity_id = event["requestContext"]["identity"]["cognitoIdentityId"]
 
     if user_name is None:
-        raise "Unable to extract user from security Provider"
+        print("Unable to extract user from security Provider")
+        response = {
+            "statusCode": 500,
+            "body": "Error while getting user"
+        }
+        return response
 
     if 'token' not in body:
-        logging.error("Validation Failed")
+        print("Validation Failed")
         response = {
             "statusCode": 400,
             "body": "token field is not in the request body"
@@ -57,7 +58,7 @@ def publish_message(event, context):
     body = json.loads(event['body'])
 
     if 'phone' not in body:
-        logging.error("Validation Failed")
+        print("Validation Failed")
         response = {
             "statusCode": 400,
             "body": "Phone field is not in the request body"
@@ -65,7 +66,7 @@ def publish_message(event, context):
         return response
 
     if 'message' not in body:
-        logging.error("Validation Failed")
+        print("Validation Failed")
         response = {
             "statusCode": 400,
             "body": "message field is not in the request body"

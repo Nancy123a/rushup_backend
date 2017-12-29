@@ -26,6 +26,7 @@ provider:
       Resource:
         - "arn:aws:dynamodb:eu-west-1:261650959426:table/user_token"
         - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery"
+        - "arn:aws:dynamodb:eu-west-1:261650959426:table/driver_token"
     - Effect: Allow
       Action:
         - sns:SetEndpointAttributes
@@ -67,6 +68,10 @@ custom:
         name: ContactSyncResponse
         contentType: "application/json"
         schema: ${file(models/contactSyncResponse.json)}
+      -
+        name: DriverRequest
+        contentType: "application/json"
+        schema: ${file(models/driverLocationrRequest.json)}
       -
         name: DeliveryRequest
         contentType: "application/json"
@@ -142,8 +147,31 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Assign Delivery to a driver"
+  saveRushieToken:
+    handler: push.save_token
+    environment:
+      table_name: user_token
+    events:
+      - http:
+          path: rushie/token
+          method: post
+          authorizer: aws_iam
+          documentation:
+            summary: "Manage Endpoint platform"
+            requestModels:
+              "application/json": TokenRequest
+      - http:
+          path: token
+          method: post
+          authorizer: aws_iam
+          documentation:
+            summary: "Manage Endpoint platform"
+            requestModels:
+              "application/json": TokenRequest
   publishMessage:
     handler: push.publish_message
+    environment:
+      table_name: user_token
     events:
       - http:
           path: publish
@@ -153,17 +181,30 @@ functions:
             summary: "Send push notification to another Rushie User"
             requestModels:
               "application/json": PushRequest
-  saveToken:
+  saveDriverToken:
     handler: push.save_token
+    environment:
+      table_name: driver_token
     events:
       - http:
-          path: token
+          path: driver/token
           method: post
           authorizer: aws_iam
           documentation:
             summary: "Manage Endpoint platform"
             requestModels:
               "application/json": TokenRequest
+  updateDriverLocation:
+    handler: driver.update_location
+    events:
+      - http:
+          path: driver/location
+          method: put
+          authorizer: aws_iam
+          documentation:
+            summary: "Update Driver Location"
+            requestModels:
+              "application/json": DriverRequest
   contactSync:
     handler: contacts.sync
     events:
