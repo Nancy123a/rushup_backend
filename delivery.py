@@ -52,7 +52,7 @@ def update_delivery_status(event, context):
     key = {
         'id': delivery_id
     }
-
+    # we should add condition that item exist before trying to update
     table.update_item(
         Key=key,
         UpdateExpression='SET delivery_status = :v',
@@ -63,7 +63,7 @@ def update_delivery_status(event, context):
 
     delivery = retrieve_delivery(delivery_id)
 
-    if delivery_status == "confirmed":
+    if delivery_status == "accepted":
         push.push_message(delivery, delivery["from"], "delivery_update")
     else:
         push.push_message(delivery, delivery["to"], "delivery_update")
