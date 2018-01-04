@@ -69,9 +69,13 @@ custom:
         contentType: "application/json"
         schema: ${file(models/contactSyncResponse.json)}
       -
-        name: DriverRequest
+        name: DriverLocationRequest
         contentType: "application/json"
         schema: ${file(models/driverLocationRequest.json)}
+      -
+        name: Driver
+        contentType: "application/json"
+        schema: ${file(models/driver.json)}
       -
         name: DeliveryRequest
         contentType: "application/json"
@@ -198,7 +202,7 @@ functions:
           documentation:
             summary: "Update Driver Location"
             requestModels:
-              "application/json": DriverRequest
+              "application/json": DriverLocationRequest
   getDriver:
     handler: driver.get_driver
     events:
@@ -212,6 +216,10 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Get Driver by id"
+            methodResponses:
+              - statusCode: '200'
+                responseModels:
+                  "application/json": Driver
 
   contactSync:
     handler: contacts.sync
