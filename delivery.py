@@ -2,7 +2,7 @@ import boto3
 import json
 import uuid
 import time
-import push
+import user_push
 import driver
 import utility
 
@@ -29,7 +29,7 @@ def save_delivery(event, context):
     # print(delivery.from)
     print(delivery)
 
-    push.push_message(delivery, delivery["to"], "delivery_request")
+    user_push.push_message(delivery, delivery["to"], "delivery_request")
 
     response = {
         "statusCode": 201,
@@ -64,10 +64,10 @@ def update_delivery_status(event, context):
     delivery = retrieve_delivery(delivery_id)
 
     if delivery_status == "accepted":
-        push.push_message(delivery, delivery["from"], "delivery_update")
+        user_push.push_message(delivery, delivery["from"], "delivery_update")
     else:
-        push.push_message(delivery, delivery["to"], "delivery_update")
-        push.push_message(delivery, delivery["from"], "delivery_update")
+        user_push.push_message(delivery, delivery["to"], "delivery_update")
+        user_push.push_message(delivery, delivery["from"], "delivery_update")
 
     response = {
         "statusCode": 200,
@@ -121,8 +121,8 @@ def assign_delivery(event, context):
 
     delivery = retrieve_delivery(delivery_id)
 
-    push.push_message(delivery, delivery["to"], "delivery_update")
-    push.push_message(delivery, delivery["from"], "delivery_update")
+    user_push.push_message(delivery, delivery["to"], "delivery_update")
+    user_push.push_message(delivery, delivery["from"], "delivery_update")
 
     response = {
         "statusCode": 200,

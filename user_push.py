@@ -7,8 +7,7 @@ dynamo_db = boto3.client('dynamodb')
 cognito = boto3.client('cognito-idp')
 sns = boto3.client('sns')
 
-table_name = os.environ['table_name']
-table_key = os.environ['table_key']
+table_name = 'user_token'
 
 
 def save_token(event, context):
@@ -125,10 +124,7 @@ def push_message(message, phone, message_type):
 
 def registerWithSNS(phone_number, user_name, token, identity_id):
 
-    if table_key == "phone":
-        endpointArn = retrieveEndpointArn(phone_number)
-    else:
-        endpointArn = retrieveEndpointArn(identity_id)
+    endpointArn = retrieveEndpointArn(phone_number)
 
     updateNeeded = False
     createNeeded = False
@@ -208,7 +204,7 @@ def createEndpoint(phone_number, user_name, token, identity_id):
 #        platform endpoint ARN is stored.
 def retrieveEndpointArn(key):
     key = {
-        table_key: {
+        'phone': {
             'S': key
         }
     }
