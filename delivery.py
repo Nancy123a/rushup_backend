@@ -64,6 +64,8 @@ def update_delivery_status(event, context):
 
     delivery = retrieve_delivery(delivery_id)
 
+    delivery['delivery_status'] = delivery_status
+
     if delivery_status == "accepted":
         user_push.push_message(delivery, delivery["from"], "delivery_update")
         driver_push.push_to_nearby_message(delivery, "delivery_new")
