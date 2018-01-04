@@ -152,7 +152,7 @@ functions:
           documentation:
             summary: "Assign Delivery to a driver"
   saveRushieToken:
-    handler: push.save_token
+    handler: user_push.save_token
     events:
       - http:
           path: rushie/token
@@ -171,7 +171,7 @@ functions:
             requestModels:
               "application/json": TokenRequest
   publishMessage:
-    handler: push.publish_message
+    handler: user_push.publish_message
     events:
       - http:
           path: publish

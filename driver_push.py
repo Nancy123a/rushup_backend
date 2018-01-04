@@ -178,7 +178,7 @@ def createEndpoint(phone_number, user_name, token, identity_id):
     try:
         print("Creating platform endpoint with token " + token)
         response = sns.create_platform_endpoint(
-            PlatformApplicationArn=os.environ['androidPlatformApplicationArn'],
+            PlatformApplicationArn=os.environ['androidDriverPlatformApplicationArn'],
             Token=token,
             CustomUserData=phone_number
         )
