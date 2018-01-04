@@ -107,7 +107,7 @@ def push_message(message, phone, message_type):
 
     print(json.dumps(message,  encoding='ascii'))
 
-    endpointArn = retrieveEndpointArn(phone)
+    endpointArn, identity_id = retrieveEndpointArn(phone)
 
     if endpointArn is None:
         response = {
@@ -132,7 +132,7 @@ def push_message(message, phone, message_type):
 
 def registerWithSNS(phone_number, user_name, token, identity_id, platform):
 
-    endpointArn = retrieveEndpointArn(phone_number)
+    endpointArn , saved_identity_id = retrieveEndpointArn(phone_number)
 
     updateNeeded = False
     createNeeded = False
@@ -178,6 +178,10 @@ def registerWithSNS(phone_number, user_name, token, identity_id, platform):
                 'Enabled': "true"
             }
         )
+
+    if saved_identity_id != identity_id:
+        print("different identity id updating to new one")
+        storeEndpointArn(phone_number, user_name, token, identity_id, endpointArn)
 
 
 # @return never null
@@ -227,7 +231,7 @@ def retrieveEndpointArn(key):
     print json.dumps(result, encoding='ascii')
 
     if "Item" in result:
-        return result["Item"]["endpoint_arn"]["S"]
+        return result["Item"]["endpoint_arn"]["S"], result["Item"]["identity_id"]["S"]
     else:
         return None
 
