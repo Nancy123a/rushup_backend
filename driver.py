@@ -1,6 +1,7 @@
 import json
 import boto3
 import urllib
+from boto3.dynamodb.conditions import Key, Attr
 
 dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
 table = dynamo_db.Table('driver_token')
@@ -62,3 +63,13 @@ def update_location(event, context):
     }
 
     return response
+
+
+def get_on_duty_driver():
+    response = table.scan(
+        FilterExpression=Attr('on_duty').eq(1)
+    )
+    if "Items" in response:
+        return response["Items"]
+    else:
+        return None

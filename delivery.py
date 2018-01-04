@@ -5,6 +5,7 @@ import time
 import user_push
 import driver
 import utility
+import driver_push
 
 dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
 
@@ -65,6 +66,7 @@ def update_delivery_status(event, context):
 
     if delivery_status == "accepted":
         user_push.push_message(delivery, delivery["from"], "delivery_update")
+        driver_push.push_to_nearby_message(delivery, "delivery_new")
     else:
         user_push.push_message(delivery, delivery["to"], "delivery_update")
         user_push.push_message(delivery, delivery["from"], "delivery_update")

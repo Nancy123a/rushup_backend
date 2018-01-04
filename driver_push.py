@@ -2,6 +2,7 @@ import json
 import boto3
 import re
 import os
+import driver
 
 dynamo_db = boto3.client('dynamodb')
 cognito = boto3.client('cognito-idp')
@@ -85,7 +86,14 @@ def publish_message(event, context):
     return push_message(message, phone, message_type)
 
 
-def push_message(message, phone, message_type):
+def push_to_nearby_message(message, message_type):
+    drivers = driver.get_on_duty_driver()
+    if drivers:
+        for dr in drivers:
+            push_message(message, dr["identity_id"], message_type)
+
+
+def push_message(message, identity_id, message_type):
 
     push = dict()
     push["message"] = message
@@ -99,7 +107,7 @@ def push_message(message, phone, message_type):
 
     print(json.dumps(gcm,  encoding='ascii'))
 
-    endpointArn = retrieveEndpointArn(phone)
+    endpointArn = retrieveEndpointArn(identity_id)
 
     if endpointArn is None:
         response = {
@@ -202,10 +210,10 @@ def createEndpoint(phone_number, user_name, token, identity_id):
 
 # @return the ARN the app was registered under previously, or null if no
 #        platform endpoint ARN is stored.
-def retrieveEndpointArn(key):
+def retrieveEndpointArn(identity_id):
     key = {
         'identity_id': {
-            'S': key
+            'S': identity_id
         }
     }
 
