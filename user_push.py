@@ -226,7 +226,7 @@ def retrieveEndpointArn(key):
         }
     }
 
-    result = dynamo_db.get_item(Key=key, ProjectionExpression="endpoint_arn", TableName=table_name)
+    result = dynamo_db.get_item(Key=key, ProjectionExpression="endpoint_arn,identity_id", TableName=table_name)
 
     print json.dumps(result, encoding='ascii')
 
