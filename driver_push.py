@@ -214,7 +214,10 @@ def retrieveEndpointArn(key):
     print json.dumps(result, encoding='ascii')
 
     if "Item" in result:
-        return result["Item"]["endpoint_arn"]["S"]
+        if "endpoint_arn" in result["Item"]:
+            return result["Item"]["endpoint_arn"]["S"]
+        else:
+            return None
     else:
         return None
 

@@ -233,7 +233,7 @@ def retrieveEndpointArn(key):
     if "Item" in result:
         return result["Item"]["endpoint_arn"]["S"], result["Item"]["identity_id"]["S"]
     else:
-        return None
+        return None, None
 
 
 #  Stores the platform endpoint ARN in permanent storage for lookup next time.
