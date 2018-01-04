@@ -21,6 +21,13 @@ def save_token(event, context):
 
     identity_id = event["requestContext"]["identity"]["cognitoIdentityId"]
 
+    user_agent = event["headers"]["User-Agent"]
+
+    if 'aws-sdk-iOS' in user_agent:
+        platform = 'ios'
+    else:
+        platform = 'android'
+
     if user_name is None:
         print("Unable to extract user from security Provider")
         response = {
@@ -40,7 +47,7 @@ def save_token(event, context):
     # user_name = event["requestContext"]["authorizer"]["claims"]["cognito:username"]
     token = body["token"]
 
-    registerWithSNS(phone_number, user_name, token, identity_id)
+    registerWithSNS(phone_number, user_name, token, identity_id, platform)
 
     response = {
         "statusCode": 201,
@@ -94,10 +101,11 @@ def push_message(message, phone, message_type):
     data = dict()
     data["data"] = push
 
-    gcm = dict()
-    gcm["GCM"] = json.dumps(data)
+    message = dict()
+    message["GCM"] = json.dumps(data)
+    message["APNS"] = json.dumps(data)
 
-    print(json.dumps(gcm,  encoding='ascii'))
+    print(json.dumps(message,  encoding='ascii'))
 
     endpointArn = retrieveEndpointArn(phone)
 
@@ -110,7 +118,7 @@ def push_message(message, phone, message_type):
 
     publish_response = sns.publish(
         TargetArn=endpointArn,
-        Message=json.dumps(gcm),
+        Message=json.dumps(message),
         MessageStructure="json"
     )
 
@@ -122,7 +130,7 @@ def push_message(message, phone, message_type):
     return response
 
 
-def registerWithSNS(phone_number, user_name, token, identity_id):
+def registerWithSNS(phone_number, user_name, token, identity_id, platform):
 
     endpointArn = retrieveEndpointArn(phone_number)
 
@@ -135,7 +143,7 @@ def registerWithSNS(phone_number, user_name, token, identity_id):
     if createNeeded:
         # No platform endpoint ARN is stored; need to call createEndpoint.
         print("New Phone number creating Endpoint")
-        endpointArn = createEndpoint(phone_number, user_name, token, identity_id)
+        endpointArn = createEndpoint(phone_number, user_name, token, identity_id, platform)
         createNeeded = False
 
     print("Retrieving platform endpoint data...")
@@ -173,12 +181,17 @@ def registerWithSNS(phone_number, user_name, token, identity_id):
 
 
 # @return never null
-def createEndpoint(phone_number, user_name, token, identity_id):
+def createEndpoint(phone_number, user_name, token, identity_id, platform):
     endpointArn = None
     try:
         print("Creating platform endpoint with token " + token)
+        if platform == 'android':
+            platform_application_arn = os.environ['androidPlatformApplicationArn']
+        else:
+            platform_application_arn = os.environ['iosPlatformApplicationArn']
+
         response = sns.create_platform_endpoint(
-            PlatformApplicationArn=os.environ['androidPlatformApplicationArn'],
+            PlatformApplicationArn=platform_application_arn,
             Token=token,
             CustomUserData=phone_number
         )
