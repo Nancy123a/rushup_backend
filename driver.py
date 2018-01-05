@@ -67,7 +67,7 @@ def update_location(event, context):
 
 def get_on_duty_driver():
     response = table.scan(
-        FilterExpression=Attr('on_duty').eq(1)
+        FilterExpression=Attr('driver_status').eq('free')
     )
     if "Items" in response:
         return response["Items"]

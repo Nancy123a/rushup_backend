@@ -248,6 +248,9 @@ def storeEndpointArn(phone_number, user_name, token, identity_id, endpoint_arn):
         },
         'token': {
             'S': token
+        },
+        'driver_status': {
+            'free'
         }
     }
 
