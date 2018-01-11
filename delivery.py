@@ -6,7 +6,9 @@ import user_push
 import driver
 import utility
 import driver_push
+import os
 
+stepfunctions = boto3.client('stepfunctions')
 dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
 
 table = dynamo_db.Table('delivery')
@@ -32,6 +34,13 @@ def save_delivery(event, context):
 
     user_push.push_message(delivery, delivery["to"], "delivery_request")
 
+    step_response = stepfunctions.start_execution(
+        stateMachineArn=os.environ['deliveryTimeoutStep'],
+        input='{"time": 60}'
+    )
+
+    print(step_response)
+
     response = {
         "statusCode": 201,
         "body": json.dumps(delivery)
@@ -50,17 +59,7 @@ def update_delivery_status(event, context):
 
     delivery_status = body["delivery_status"]
 
-    key = {
-        'id': delivery_id
-    }
-    # we should add condition that item exist before trying to update
-    table.update_item(
-        Key=key,
-        UpdateExpression='SET delivery_status = :v',
-        ExpressionAttributeValues={
-            ':v': delivery_status
-        }
-    )
+    update_status(delivery_id, delivery_status)
 
     delivery = retrieve_delivery(delivery_id)
 
@@ -77,7 +76,6 @@ def update_delivery_status(event, context):
     }
 
     return response
-
 
 def get_delivery(event, context):
 
@@ -150,3 +148,32 @@ def retrieve_delivery(delivery_id):
         return result["Item"]
     else:
         return None
+
+
+def update_status(delivery_id, delivery_status):
+    key = {
+        'id': delivery_id
+    }
+    # we should add condition that item exist before trying to update
+    table.update_item(
+        Key=key,
+        UpdateExpression='SET delivery_status = :v',
+        ExpressionAttributeValues={
+            ':v': delivery_status
+        }
+    )
+
+
+def check_if_delivery_timeout(delivery_id):
+
+    delivery = retrieve_delivery(delivery_id)
+
+    if delivery:
+        if delivery['delivery_status'] == 'pending':
+            print('delivery is still pending , timing out')
+            update_delivery_status(delivery_id, 'timeout')
+            delivery = retrieve_delivery(delivery_id)
+            user_push.push_message(delivery, delivery["to"], "delivery_update")
+            user_push.push_message(delivery, delivery["from"], "delivery_update")
+        else:
+            print('delivery has been accepted')

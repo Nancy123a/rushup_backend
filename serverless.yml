@@ -238,6 +238,8 @@ functions:
               - statusCode: '200'
                 responseModels:
                   "application/json": ContactSyncResponse
+  deliveryTimeout:
+    handler: delivery.check_if_delivery_timeout
 resources:
   Resources:
     ApiGatewayRestApi:
