@@ -45,6 +45,11 @@ provider:
       Action:
         - cognito-sync:ListRecords
       Resource: "arn:aws:cognito-sync:*:*:identitypool/*/identity/*/dataset/*"
+    - Effect: Allow
+      Action:
+        - states:StartExecution
+      Resource:
+        - "arn:aws:states:eu-west-1:261650959426:stateMachine:delivery_timeout"
 custom:
   defaultStage: prod
   profiles:

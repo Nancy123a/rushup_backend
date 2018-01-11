@@ -164,14 +164,18 @@ def update_status(delivery_id, delivery_status):
     )
 
 
-def check_if_delivery_timeout(delivery_id):
+def check_if_delivery_timeout(event, context):
+
+    print json.dumps(event,  encoding='ascii')
+
+    delivery_id = event["delivery_id"]
 
     delivery = retrieve_delivery(delivery_id)
 
     if delivery:
         if delivery['delivery_status'] == 'pending':
             print('delivery is still pending , timing out')
-            update_delivery_status(delivery_id, 'timeout')
+            update_status(delivery_id, 'timeout')
             delivery = retrieve_delivery(delivery_id)
             user_push.push_message(delivery, delivery["to"], "delivery_update")
             user_push.push_message(delivery, delivery["from"], "delivery_update")
