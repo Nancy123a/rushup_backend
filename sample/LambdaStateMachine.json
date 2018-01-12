@@ -1,0 +1,16 @@
+{
+  "Comment": "wait x number of seconds and then execute lambda function",
+  "StartAt": "wait",
+  "States": {
+    "wait": {
+      "Type": "Wait",
+      "SecondsPath": "$.time",
+      "Next": "Lambda2"
+    },
+    "Lambda2": {
+      "Type": "Task",
+      "Resource": "the ARN of your lambda fucntion",
+      "End": true
+    }
+  }
+}

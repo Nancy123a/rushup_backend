@@ -36,7 +36,10 @@ provider:
     - Effect: Allow
       Action:
         - sns:publish
-      Resource: "arn:aws:sns:eu-west-1:261650959426:app/GCM/rush_up"
+      Resource:
+        - "arn:aws:sns:eu-west-1:261650959426:app/GCM/rush_up"
+        - "arn:aws:sns:eu-west-1:261650959426:app/GCM/rush_up_driver"
+        - "arn:aws:sns:eu-west-1:261650959426:app/APNS_SANDBOX/rush_up_ios_dev"
     - Effect: Allow
       Action:
         - cognito-idp:*

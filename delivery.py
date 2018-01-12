@@ -34,9 +34,13 @@ def save_delivery(event, context):
 
     user_push.push_message(delivery, delivery["to"], "delivery_request")
 
+    step_input = dict()
+    step_input["time"] = os.environ["deliveryTimeout"]
+    step_input["delivery_id"] = delivery["id"]
+
     step_response = stepfunctions.start_execution(
         stateMachineArn=os.environ['deliveryTimeoutStep'],
-        input='{"time": 60}'
+        input=json.dumps(step_input)
     )
 
     print(step_response)
