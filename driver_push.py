@@ -86,11 +86,10 @@ def publish_message(event, context):
     return push_message(message, phone, message_type)
 
 
-def push_to_nearby_message(message, message_type):
-    drivers = driver.get_on_duty_driver()
-    if drivers:
-        for dr in drivers:
-            push_message(message, dr["identity_id"], message_type)
+def propose_delivery(event, context):
+    delivery = event["delivery"]
+    driver_id = event["driver"]["identity_id"]
+    push_message(delivery, driver_id, "delivery_new")
 
 
 def push_message(message, identity_id, message_type):

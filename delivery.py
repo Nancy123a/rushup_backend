@@ -35,7 +35,7 @@ def save_delivery(event, context):
     user_push.push_message(delivery, delivery["to"], "delivery_request")
 
     step_input = dict()
-    step_input["time"] = os.environ["deliveryTimeout"]
+    step_input["time"] = int(os.environ["deliveryTimeout"])
     step_input["delivery_id"] = delivery["id"]
 
     step_response = stepfunctions.start_execution(
@@ -69,7 +69,15 @@ def update_delivery_status(event, context):
 
     if delivery_status == "accepted":
         user_push.push_message(delivery, delivery["from"], "delivery_update")
-        driver_push.push_to_nearby_message(delivery, "delivery_new")
+        step_input = dict()
+        step_input["delivery"] = delivery
+
+        step_response = stepfunctions.start_execution(
+            stateMachineArn=os.environ['driverAssignState'],
+            input=json.dumps(step_input)
+        )
+        print(step_response)
+        #driver_push.push_to_nearby_message(delivery, "delivery_new")
     else:
         user_push.push_message(delivery, delivery["to"], "delivery_update")
         user_push.push_message(delivery, delivery["from"], "delivery_update")
@@ -81,10 +89,12 @@ def update_delivery_status(event, context):
 
     return response
 
+
 def get_delivery(event, context):
 
     print json.dumps(event,  encoding='ascii')
     delivery_id = event["pathParameters"]["delivery_id"]
+
     delivery = retrieve_delivery(delivery_id)
 
     response = {
@@ -93,6 +103,11 @@ def get_delivery(event, context):
     }
 
     return response
+
+
+def get_delivery_state(event, context):
+    delivery_id = event["delivery"]["id"]
+    return retrieve_delivery(delivery_id)
 
 
 # Method has to be called only by drivers
