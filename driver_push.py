@@ -88,11 +88,15 @@ def publish_message(event, context):
 
 def propose_delivery(event, context):
     delivery = event["delivery"]
-    driver_id = event["driver"]["identity_id"]
-    push_message(delivery, driver_id, "delivery_new")
+    # Select first driver as it is going to be the nearest
+    endpointArn = event["drivers"]["result"][0]["endpoint_arn"]
+    try:
+        push_message(delivery, None, "delivery_new", endpointArn)
+    except sns.exceptions.EndpointDisabledException as ex:
+        print "Endpoint disabled should be removed from database"
 
 
-def push_message(message, identity_id, message_type):
+def push_message(message, identity_id, message_type, endpointArn = None):
 
     push = dict()
     push["message"] = message
@@ -106,7 +110,8 @@ def push_message(message, identity_id, message_type):
 
     print(json.dumps(gcm,  encoding='ascii'))
 
-    endpointArn = retrieveEndpointArn(identity_id)
+    if not endpointArn:
+        endpointArn = retrieveEndpointArn(identity_id)
 
     if endpointArn is None:
         response = {
@@ -249,7 +254,7 @@ def storeEndpointArn(phone_number, user_name, token, identity_id, endpoint_arn):
             'S': token
         },
         'driver_status': {
-            'free'
+            'S': 'off'
         }
     }
 

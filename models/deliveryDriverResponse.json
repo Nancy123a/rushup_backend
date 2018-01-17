@@ -1,0 +1,19 @@
+{
+  "$schema" : "http://json-schema.org/draft-04/schema#",
+  "title" : "Delivery Drivers Response",
+  "definitions": {
+    "Location": {
+      "type": "object",
+      "properties": {
+        "latitude": {
+          "type": "string"
+        },
+        "longitude": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "type" : "array",
+  "items" : { "$ref": "#/definitions/Location" }
+}

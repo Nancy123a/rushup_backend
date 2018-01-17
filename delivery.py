@@ -20,7 +20,7 @@ def save_delivery(event, context):
 
     delivery = json.loads(event['body'])
 
-    if "id"  not in delivery:
+    if "id" not in delivery:
         delivery["id"] = str(uuid.uuid1())
         delivery["delivery_status"] = "pending"
         delivery["delivery_date"] = int(time.time())

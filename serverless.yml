@@ -2,7 +2,9 @@ service:
  name: rushup
 
 frameworkVersion: ">=1.2.0 <2.0.0"
-
+package:
+  exclude:
+    - node_modules/**
 plugins:
   - serverless-aws-documentation
 provider:
@@ -54,8 +56,9 @@ provider:
         - states:StartExecution
       Resource:
         - "arn:aws:states:eu-west-1:261650959426:stateMachine:delivery_timeout"
+        - "arn:aws:states:eu-west-1:261650959426:stateMachine:driver_assign"
 custom:
-  defaultStage: dev
+  defaultStage: prod
   profiles:
     dev: zeroandonedev
     prod: zeroandonedev
@@ -82,9 +85,17 @@ custom:
         contentType: "application/json"
         schema: ${file(models/driverLocationRequest.json)}
       -
+        name: DriverStatusRequest
+        contentType: "application/json"
+        schema: ${file(models/driverStatusRequest.json)}
+      -
         name: Driver
         contentType: "application/json"
         schema: ${file(models/driver.json)}
+      -
+        name: DeliveryDriversResponse
+        contentType: "application/json"
+        schema: ${file(models/deliveryDriverResponse.json)}
       -
         name: DeliveryRequest
         contentType: "application/json"
@@ -212,6 +223,34 @@ functions:
             summary: "Update Driver Location"
             requestModels:
               "application/json": DriverLocationRequest
+  getDeliveryDrivers:
+    handler: driver.get_delivery_drivers
+    events:
+      - http:
+          path: delivery/{delivery_id}/drivers
+          method: get
+          request:
+            parameters:
+              paths:
+                delivery_id: true
+          authorizer: aws_iam
+          documentation:
+            summary: "Get Drivers for Delivery"
+            methodResponses:
+              - statusCode: '200'
+                responseModels:
+                  "application/json": DeliveryDriversResponse
+  updateDriverStatus:
+    handler: driver.update_driver_status
+    events:
+      - http:
+          path: driver/status
+          method: put
+          authorizer: aws_iam
+          documentation:
+            summary: "Update Driver Status"
+            requestModels:
+              "application/json": DriverStatusRequest
   getDriver:
     handler: driver.get_driver
     events:
