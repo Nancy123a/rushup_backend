@@ -43,9 +43,13 @@ def get_delivery_drivers(event, context):
 
     locations = []
 
+    print json.dumps(result, encoding='ascii')
+
     if "Item" in result:
-        for driver in result["Item"]:
-            locations.append(driver["driver_location"])
+        if "drivers" in result["Item"]:
+            for driver in result["Item"]["drivers"]:
+                print json.dumps(driver, encoding='ascii')
+                locations.append(driver["driver_location"])
 
     response = {
         "statusCode": 200,
@@ -76,13 +80,7 @@ def update_driver_status(event, context):
 
         identity_id = event["requestContext"]["identity"]["cognitoIdentityId"]
 
-        table.update_item(
-            Key={'identity_id':  identity_id},
-            UpdateExpression='SET driver_status = :s',
-            ExpressionAttributeValues={
-                ':s': body["status"]
-            }
-        )
+        update_driver_status_internal(identity_id, body["status"])
 
         response = {
             "statusCode": 200,
@@ -98,6 +96,17 @@ def update_driver_status(event, context):
             "body": "Invalid Status"
         }
         return response
+
+
+def update_driver_status_internal(identity_id, status):
+
+    table.update_item(
+        Key={'identity_id':  identity_id},
+        UpdateExpression='SET driver_status = :s',
+        ExpressionAttributeValues={
+            ':s': status
+        }
+    )
 
 
 def retrieve_driver(identity_id):

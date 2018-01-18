@@ -57,11 +57,17 @@ def update_delivery_status(event, context):
 
     print json.dumps(event,  encoding='ascii')
 
-    delivery_id = event["pathParameters"]["delivery_id"]
-
-    body = json.loads(event['body'])
-
-    delivery_status = body["delivery_status"]
+    if "pathParameters" in event:
+        delivery_id = event["pathParameters"]["delivery_id"]
+        body = json.loads(event['body'])
+        delivery_status = body["delivery_status"]
+    else:
+        delivery_id = event["delivery"]["id"]
+        if event["drivers"]["driver_count"] == 0:
+            delivery_status = "no_driver"
+        else:
+            # we should never reach this
+            delivery_status = "unknown"
 
     update_status(delivery_id, delivery_status)
 
@@ -78,6 +84,10 @@ def update_delivery_status(event, context):
         )
         print(step_response)
         #driver_push.push_to_nearby_message(delivery, "delivery_new")
+    elif delivery_status == "delivered":
+        driver.update_driver_status_internal(delivery["driver"]["identity_id"], "on")
+        user_push.push_message(delivery, delivery["to"], "delivery_update")
+        user_push.push_message(delivery, delivery["from"], "delivery_update")
     else:
         user_push.push_message(delivery, delivery["to"], "delivery_update")
         user_push.push_message(delivery, delivery["from"], "delivery_update")
@@ -137,6 +147,8 @@ def assign_delivery(event, context):
         },
         ConditionExpression="delivery_status = :o"
     )
+
+    driver.update_driver_status_internal(driver_id, "occupied")
 
     delivery = retrieve_delivery(delivery_id)
 
