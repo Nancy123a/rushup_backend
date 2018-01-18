@@ -8,6 +8,7 @@ import utility
 import driver_push
 import os
 import random
+from haversine import distance
 
 
 stepfunctions = boto3.client('stepfunctions')
@@ -154,6 +155,31 @@ def get_delivery_state(event, context):
     delivery_id = event["delivery"]["id"]
     return retrieve_delivery(delivery_id)
 
+
+def knock_monitor(event, context):
+    step_input = dict()
+    step_input["delivery"] = event["delivery"]
+    step_input["driver"] = event["drivers"]["result"][0]
+    step_response = stepfunctions.start_execution(
+        stateMachineArn=os.environ['driverAssignState'],
+        input=json.dumps(step_input)
+    )
+    print(step_response)
+    return
+
+
+def get_distance(event, context):
+    origin = event["origin"]
+    destination = event["destination"]
+    to = event["to"]
+    d = distance(origin, destination)
+    msg = dict()
+    msg["message"] = "knock knock"
+    if d < 0.5:
+        user_push.push_message(msg, to, "driver_knock")
+        return True
+    else:
+        return False
 
 # Method has to be called only by drivers
 # to take over a delivery to be delivered

@@ -313,6 +313,10 @@ functions:
     handler: driver_push.propose_delivery
   getDeliveryState:
     handler: delivery.get_delivery_state
+  knockMonitor:
+    handler: delivery.knock_monitor
+  getDistance:
+    handler: delivery.get_distance
 resources:
   Resources:
     ApiGatewayRestApi:
