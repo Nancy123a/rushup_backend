@@ -7,6 +7,8 @@ import driver
 import utility
 import driver_push
 import os
+import random
+
 
 stepfunctions = boto3.client('stepfunctions')
 dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
@@ -24,7 +26,8 @@ def save_delivery(event, context):
         delivery["id"] = str(uuid.uuid1())
         delivery["delivery_status"] = "pending"
         delivery["delivery_date"] = int(time.time())
-
+        delivery["from_code"] = str(random.randrange(1001, 9999, 1))
+        delivery["to_code"] = str(random.randrange(1001, 9999, 1))
     table.put_item(
         Item=delivery
     )
@@ -84,11 +87,8 @@ def update_delivery_status(event, context):
         )
         print(step_response)
         #driver_push.push_to_nearby_message(delivery, "delivery_new")
-    elif delivery_status == "delivered":
-        driver.update_driver_status_internal(delivery["driver"]["identity_id"], "on")
-        user_push.push_message(delivery, delivery["to"], "delivery_update")
-        user_push.push_message(delivery, delivery["from"], "delivery_update")
     else:
+        # We should only reach this when no driver is their
         user_push.push_message(delivery, delivery["to"], "delivery_update")
         user_push.push_message(delivery, delivery["from"], "delivery_update")
 
@@ -97,6 +97,41 @@ def update_delivery_status(event, context):
         "body": json.dumps({})
     }
 
+    return response
+
+
+def pick_up_dropoff_delivery(event, context):
+    delivery_id = event["pathParameters"]["delivery_id"]
+    delivery = retrieve_delivery(delivery_id)
+    body = json.loads(event['body'])
+    delivery_status = body["delivery_status"]
+    code = body["code"]
+    if delivery_status == "with_delivery" and delivery["from_code"] == code:
+        update_status(delivery_id, delivery_status)
+        user_push.push_message(delivery, delivery["to"], "delivery_update")
+        user_push.push_message(delivery, delivery["from"], "delivery_update")
+        response = {
+            "statusCode": 200,
+            "body": json.dumps({})
+        }
+        return response
+
+    if delivery_status == "delivered" and delivery["to_code"] == code:
+        update_status(delivery_id, delivery_status)
+        user_push.push_message(delivery, delivery["to"], "delivery_update")
+        user_push.push_message(delivery, delivery["from"], "delivery_update")
+        driver.update_driver_status_internal(delivery["driver"]["identity_id"], "on")
+        response = {
+            "statusCode": 200,
+            "body": json.dumps({})
+        }
+        return response
+
+    print("Wrong Code or invalid status")
+    response = {
+        "statusCode": 500,
+        "body": "Wrong Code or invalid status"
+    }
     return response
 
 

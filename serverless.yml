@@ -104,6 +104,10 @@ custom:
         name: DeliveryStatusRequest
         contentType: "application/json"
         schema: ${file(models/deliveryStatusRequest.json)}
+      -
+        name: DeliveryPickUpDropoff
+        contentType: "application/json"
+        schema: ${file(models/deliveryPickUpDropoff.json)}
 functions:
   currentTime:
     handler: handler.endpoint
@@ -223,6 +227,21 @@ functions:
             summary: "Update Driver Location"
             requestModels:
               "application/json": DriverLocationRequest
+  updateDeliveryPickupDropOff:
+    handler: delivery.pick_up_dropoff_delivery
+    events:
+      - http:
+          path: delivery/{delivery_id}/pickupdropoff
+          method: put
+          request:
+            parameters:
+              paths:
+                delivery_id: true
+          authorizer: aws_iam
+          documentation:
+            summary: "Update Delivery Pickup and Dropoff"
+            requestModels:
+              "application/json": DeliveryPickUpDropoff
   getDeliveryDrivers:
     handler: driver.get_delivery_drivers
     events:
