@@ -91,6 +91,8 @@ def propose_delivery(event, context):
     # Select first driver as it is going to be the nearest
     endpointArn = event["drivers"]["result"][0]["endpoint_arn"]
     try:
+        delivery["from_code"] = ""
+        delivery["to_code"] = ""
         push_message(delivery, None, "delivery_new", endpointArn)
     except sns.exceptions.EndpointDisabledException as ex:
         print "Endpoint disabled should be removed from database"

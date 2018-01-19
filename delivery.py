@@ -101,6 +101,7 @@ def update_delivery_status(event, context):
 
 
 def pick_up_dropoff_delivery(event, context):
+    print json.dumps(event,  encoding='ascii')
     delivery_id = event["pathParameters"]["delivery_id"]
     delivery = retrieve_delivery(delivery_id)
     body = json.loads(event['body'])
@@ -108,6 +109,8 @@ def pick_up_dropoff_delivery(event, context):
     code = body["code"]
     if delivery_status == "with_delivery" and delivery["from_code"] == code:
         update_status(delivery_id, delivery_status)
+        delivery["delivery_status"] = "with_delivery"
+        delivery = retrieve_delivery(delivery_id)
         user_push.push_message(delivery, delivery["to"], "delivery_update")
         user_push.push_message(delivery, delivery["from"], "delivery_update")
         response = {
@@ -118,6 +121,7 @@ def pick_up_dropoff_delivery(event, context):
 
     if delivery_status == "delivered" and delivery["to_code"] == code:
         update_status(delivery_id, delivery_status)
+        delivery["delivery_status"] = "delivered"
         user_push.push_message(delivery, delivery["to"], "delivery_update")
         user_push.push_message(delivery, delivery["from"], "delivery_update")
         driver.update_driver_status_internal(delivery["driver"]["identity_id"], "on")
