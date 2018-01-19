@@ -5,8 +5,9 @@ import os
 import time
 from boto3.dynamodb.conditions import Key, Attr
 from geoindex import GeoGridIndex, GeoPoint
-
-
+from delivery import retrieve_delivery
+from haversine import distance
+from user_push import push_message
 dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
 table = dynamo_db.Table('driver_token')
 delivery_drivers_table = dynamo_db.Table('delivery_drivers')
@@ -76,11 +77,11 @@ def update_driver_status(event, context):
 
     status = body["status"]
 
-    if status == "on" or status == "occupied" or status == "off":
+    if status == "on" or status == "off":
 
         identity_id = event["requestContext"]["identity"]["cognitoIdentityId"]
 
-        update_driver_status_internal(identity_id, body["status"])
+        update_driver_status_internal(identity_id, body["status"], "")
 
         response = {
             "statusCode": 200,
@@ -98,13 +99,14 @@ def update_driver_status(event, context):
         return response
 
 
-def update_driver_status_internal(identity_id, status):
+def update_driver_status_internal(identity_id, status, delivery_id=""):
 
     table.update_item(
         Key={'identity_id':  identity_id},
-        UpdateExpression='SET driver_status = :s',
+        UpdateExpression='SET driver_status = :s, delivery_id = :d',
         ExpressionAttributeValues={
-            ':s': status
+            ':s': status,
+            ':d': delivery_id
         }
     )
 
@@ -135,13 +137,36 @@ def update_location(event, context):
 
     identity_id = event["requestContext"]["identity"]["cognitoIdentityId"]
 
-    table.update_item(
+    driver = table.update_item(
         Key={'identity_id':  identity_id},
         UpdateExpression='SET driver_location = :l',
         ExpressionAttributeValues={
             ':l': body
-        }
+        },
+        ReturnValues="ALL_NEW"
     )
+
+    print json.dumps(driver, encoding='ascii')
+
+    if "delivery_id" in driver:
+        if driver["delivery_id"] != "":
+            delivery = retrieve_delivery(driver["delivery_id"])
+            print json.dumps(delivery, encoding='ascii')
+            d = 1000
+            if delivery["delivery_status"] == "assigned":
+                point1 = (delivery["pickup_location"]["latitude"],delivery["pickup_location"]["longitude"])
+                point2 = (driver["driver_location"]["latitude"],driver["driver_location"]["longitude"])
+                d = distance(point1, point2)
+                if d < 0.5:
+                    push_message(delivery, delivery["from"], "driver_knock")
+            if delivery["delivery_status"] == "with_delivery":
+                point1 = (delivery["dropoff_location"]["latitude"],delivery["pickup_location"]["longitude"])
+                point2 = (driver["dropoff_location"]["latitude"],driver["driver_location"]["longitude"])
+                d = distance(point1, point2)
+                if d < 0.5:
+                    msg = dict()
+                    msg["message"] = "knock knock"
+                    push_message(delivery, delivery["to"], "driver_knock")
 
     response = {
         "statusCode": 200,

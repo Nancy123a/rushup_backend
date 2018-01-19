@@ -125,7 +125,7 @@ def pick_up_dropoff_delivery(event, context):
         delivery["delivery_status"] = "delivered"
         user_push.push_message(delivery, delivery["to"], "delivery_update")
         user_push.push_message(delivery, delivery["from"], "delivery_update")
-        driver.update_driver_status_internal(delivery["driver"]["identity_id"], "on")
+        driver.update_driver_status_internal(delivery["driver"]["identity_id"], "on", "")
         response = {
             "statusCode": 200,
             "body": json.dumps({})
@@ -185,6 +185,7 @@ def get_distance(event, context):
     else:
         return False
 
+
 # Method has to be called only by drivers
 # to take over a delivery to be delivered
 def assign_delivery(event, context):
@@ -213,7 +214,7 @@ def assign_delivery(event, context):
         ConditionExpression="delivery_status = :o"
     )
 
-    driver.update_driver_status_internal(driver_id, "occupied")
+    driver.update_driver_status_internal(driver_id, "occupied", delivery_id)
 
     delivery = retrieve_delivery(delivery_id)
 
