@@ -6,7 +6,6 @@ import time
 from boto3.dynamodb.conditions import Key, Attr
 from geoindex import GeoGridIndex, GeoPoint
 import delivery
-from haversine import distance
 from user_push import push_message
 dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
 table = dynamo_db.Table('driver_token')
@@ -156,16 +155,16 @@ def update_location(event, context):
             print json.dumps(dlv, encoding='ascii')
             d = 1000
             if dlv["delivery_status"] == "assigned":
-                point1 = (float(dlv["pickup_location"]["latitude"]), float(dlv["pickup_location"]["longitude"]))
-                point2 = (float(driver["driver_location"]["latitude"]), float(driver["driver_location"]["longitude"]))
-                d = distance(point1, point2)
+                point1 = GeoPoint(float(dlv["pickup_location"]["latitude"]), float(dlv["pickup_location"]["longitude"]))
+                point2 = GeoPoint(float(driver["driver_location"]["latitude"]), float(driver["driver_location"]["longitude"]))
+                d = point1.distance_to(point2)
                 print "Distance between driver and pickup {} KM".format(d)
                 if d < 0.5:
                     push_message(dlv, dlv["from"], "driver_knock")
             if dlv["delivery_status"] == "with_delivery":
-                point1 = (float(dlv["dropoff_location"]["latitude"]), float(dlv["pickup_location"]["longitude"]))
-                point2 = (float(driver["dropoff_location"]["latitude"]), float(driver["driver_location"]["longitude"]))
-                d = distance(point1, point2)
+                point1 = GeoPoint(float(dlv["dropoff_location"]["latitude"]), float(dlv["pickup_location"]["longitude"]))
+                point2 = GeoPoint(float(driver["dropoff_location"]["latitude"]), float(driver["driver_location"]["longitude"]))
+                d = point1.distance_to(point2)
                 print "Distance between driver and dropoff {} KM".format(d)
                 if d < 0.5:
                     msg = dict()
@@ -182,7 +181,7 @@ def update_location(event, context):
 
 def get_available_drivers(event, context):
     print json.dumps(event)
-    delivery = event["delivery"]
+    dlv = event["delivery"]
     if "drivers" in event:
         if "result" in event["drivers"]:
             selected_drivers = event["drivers"]["result"]
@@ -201,7 +200,7 @@ def get_available_drivers(event, context):
         for driver in response["Items"]:
             index.add_point(GeoPoint(float(driver["driver_location"]["latitude"]),float(driver["driver_location"]["longitude"]), ref=driver))
 
-        center_point = GeoPoint(float(delivery["pickup_location"]["latitude"]), float(delivery["pickup_location"]["longitude"]))
+        center_point = GeoPoint(float(dlv["pickup_location"]["latitude"]), float(dlv["pickup_location"]["longitude"]))
         radius = int(os.environ["driverMinLookupRadius"])
         max_radius = int(os.environ["driverMaxLookupRadius"])
         while not drivers:
@@ -228,7 +227,7 @@ def get_available_drivers(event, context):
         print drivers
         delivery_drivers_table.put_item(
             Item={
-                "delivery_id": delivery["id"],
+                "delivery_id": dlv["id"],
                 "drivers": drivers,
                 "ttl": int(time.time()) + (30 * 60)
             }
