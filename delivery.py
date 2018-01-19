@@ -5,7 +5,6 @@ import time
 import user_push
 import driver
 import utility
-import driver_push
 import os
 import random
 from haversine import distance

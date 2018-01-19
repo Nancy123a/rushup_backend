@@ -5,7 +5,7 @@ import os
 import time
 from boto3.dynamodb.conditions import Key, Attr
 from geoindex import GeoGridIndex, GeoPoint
-from delivery import retrieve_delivery
+import delivery
 from haversine import distance
 from user_push import push_message
 dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
@@ -137,7 +137,7 @@ def update_location(event, context):
 
     identity_id = event["requestContext"]["identity"]["cognitoIdentityId"]
 
-    driver = table.update_item(
+    result = table.update_item(
         Key={'identity_id':  identity_id},
         UpdateExpression='SET driver_location = :l',
         ExpressionAttributeValues={
@@ -146,27 +146,31 @@ def update_location(event, context):
         ReturnValues="ALL_NEW"
     )
 
+    driver = result["Attributes"]
+
     print json.dumps(driver, encoding='ascii')
 
     if "delivery_id" in driver:
         if driver["delivery_id"] != "":
-            delivery = retrieve_delivery(driver["delivery_id"])
-            print json.dumps(delivery, encoding='ascii')
+            dlv = delivery.retrieve_delivery(driver["delivery_id"])
+            print json.dumps(dlv, encoding='ascii')
             d = 1000
-            if delivery["delivery_status"] == "assigned":
-                point1 = (delivery["pickup_location"]["latitude"],delivery["pickup_location"]["longitude"])
-                point2 = (driver["driver_location"]["latitude"],driver["driver_location"]["longitude"])
+            if dlv["delivery_status"] == "assigned":
+                point1 = (float(dlv["pickup_location"]["latitude"]), float(dlv["pickup_location"]["longitude"]))
+                point2 = (float(driver["driver_location"]["latitude"]), float(driver["driver_location"]["longitude"]))
                 d = distance(point1, point2)
+                print "Distance between driver and pickup {} KM".format(d)
                 if d < 0.5:
-                    push_message(delivery, delivery["from"], "driver_knock")
-            if delivery["delivery_status"] == "with_delivery":
-                point1 = (delivery["dropoff_location"]["latitude"],delivery["pickup_location"]["longitude"])
-                point2 = (driver["dropoff_location"]["latitude"],driver["driver_location"]["longitude"])
+                    push_message(dlv, dlv["from"], "driver_knock")
+            if dlv["delivery_status"] == "with_delivery":
+                point1 = (float(dlv["dropoff_location"]["latitude"]), float(dlv["pickup_location"]["longitude"]))
+                point2 = (float(driver["dropoff_location"]["latitude"]), float(driver["driver_location"]["longitude"]))
                 d = distance(point1, point2)
+                print "Distance between driver and dropoff {} KM".format(d)
                 if d < 0.5:
                     msg = dict()
                     msg["message"] = "knock knock"
-                    push_message(delivery, delivery["to"], "driver_knock")
+                    push_message(dlv, dlv["to"], "driver_knock")
 
     response = {
         "statusCode": 200,
