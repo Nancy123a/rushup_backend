@@ -98,16 +98,25 @@ def update_driver_status(event, context):
         return response
 
 
-def update_driver_status_internal(identity_id, status, delivery_id=""):
+def update_driver_status_internal(identity_id, status, delivery_id=None):
 
-    table.update_item(
-        Key={'identity_id':  identity_id},
-        UpdateExpression='SET driver_status = :s, delivery_id = :d',
-        ExpressionAttributeValues={
-            ':s': status,
-            ':d': delivery_id
-        }
-    )
+    if delivery_id:
+        table.update_item(
+            Key={'identity_id':  identity_id},
+            UpdateExpression='SET driver_status = :s, delivery_id = :d',
+            ExpressionAttributeValues={
+                ':s': status,
+                ':d': delivery_id
+            }
+        )
+    else:
+        table.update_item(
+            Key={'identity_id':  identity_id},
+            UpdateExpression='SET driver_status = :s REMOVE delivery_id',
+            ExpressionAttributeValues={
+                ':s': status
+            }
+        )
 
 
 def retrieve_driver(identity_id):
@@ -161,17 +170,15 @@ def update_location(event, context):
                 print "Distance between driver and pickup {} KM".format(d)
                 if d < 0.5:
                     push_message(dlv, dlv["from"], "driver_knock")
-                    push_message(dlv, dlv["to"], "driver_knock")
             if dlv["delivery_status"] == "with_delivery":
                 point1 = GeoPoint(float(dlv["dropoff_location"]["latitude"]), float(dlv["pickup_location"]["longitude"]))
-                point2 = GeoPoint(float(driver["dropoff_location"]["latitude"]), float(driver["driver_location"]["longitude"]))
+                point2 = GeoPoint(float(driver["driver_location"]["latitude"]), float(driver["driver_location"]["longitude"]))
                 d = point1.distance_to(point2)
                 print "Distance between driver and dropoff {} KM".format(d)
                 if d < 0.5:
                     msg = dict()
                     msg["message"] = "knock knock"
                     push_message(dlv, dlv["to"], "driver_knock")
-                    push_message(dlv, dlv["from"], "driver_knock")
 
     response = {
         "statusCode": 200,
