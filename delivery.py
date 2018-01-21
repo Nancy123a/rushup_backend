@@ -204,10 +204,11 @@ def assign_delivery(event, context):
 
     table.update_item(
         Key=key,
-        UpdateExpression='SET delivery_status = :v, driver = :d',
+        UpdateExpression='SET delivery_status = :v, driver = :d, driver_id = :di',
         ExpressionAttributeValues={
             ':v': delivery_status,
             ':d': delivery_driver,
+            ':di': driver_id,
             ':o': 'accepted'
         },
         ConditionExpression="delivery_status = :o"

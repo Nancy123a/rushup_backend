@@ -98,25 +98,30 @@ def update_driver_status(event, context):
         return response
 
 
-def update_driver_status_internal(identity_id, status, delivery_id=None):
+def update_driver_status_internal(identity_id, status, delivery_id=None, successful_delivery=False):
+
+    expression_attribute_values = dict()
+    expression_attribute_values[":s"] = status
+
+    update_expression = 'SET driver_status = :s'
+
+    if successful_delivery:
+        update_expression = update_expression + ' , delivery_count = delivery_count + :c'
+        expression_attribute_values[":c"] = 1
 
     if delivery_id:
-        table.update_item(
-            Key={'identity_id':  identity_id},
-            UpdateExpression='SET driver_status = :s, delivery_id = :d',
-            ExpressionAttributeValues={
-                ':s': status,
-                ':d': delivery_id
-            }
-        )
+        update_expression = update_expression + ', delivery_id = :d'
+        expression_attribute_values[":d"] = delivery_id
     else:
-        table.update_item(
-            Key={'identity_id':  identity_id},
-            UpdateExpression='SET driver_status = :s REMOVE delivery_id',
-            ExpressionAttributeValues={
-                ':s': status
-            }
-        )
+        update_expression = update_expression + ' REMOVE delivery_id'
+
+    print update_expression
+
+    table.update_item(
+        Key={'identity_id':  identity_id},
+        UpdateExpression=update_expression,
+        ExpressionAttributeValues=expression_attribute_values
+    )
 
 
 def retrieve_driver(identity_id):
@@ -125,7 +130,7 @@ def retrieve_driver(identity_id):
         Key={
             'identity_id': identity_id
         },
-        ProjectionExpression="identity_id,phone,driver_location,username"
+        ProjectionExpression="identity_id,phone,driver_location,username,delivery_count"
     )
 
     print json.dumps(result, encoding='ascii')
