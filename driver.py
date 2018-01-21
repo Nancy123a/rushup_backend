@@ -171,7 +171,7 @@ def update_location(event, context):
                 if d < 0.5:
                     push_message(dlv, dlv["from"], "driver_knock")
             if dlv["delivery_status"] == "with_delivery":
-                point1 = GeoPoint(float(dlv["dropoff_location"]["latitude"]), float(dlv["pickup_location"]["longitude"]))
+                point1 = GeoPoint(float(dlv["dropoff_location"]["latitude"]), float(dlv["dropoff_location"]["longitude"]))
                 point2 = GeoPoint(float(driver["driver_location"]["latitude"]), float(driver["driver_location"]["longitude"]))
                 d = point1.distance_to(point2)
                 print "Distance between driver and dropoff {} KM".format(d)
