@@ -7,8 +7,6 @@ import driver
 import utility
 import os
 import random
-from haversine import distance
-
 
 stepfunctions = boto3.client('stepfunctions')
 dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')

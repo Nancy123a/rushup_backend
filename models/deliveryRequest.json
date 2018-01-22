@@ -32,7 +32,7 @@
         "identity_id" : {"type": "string" },
         "username" : { "type" : "string" },
         "phone" : { "type" : "string" },
-        "delivery_count" : { "type" : "number"},
+        "delivery_count" : { "type" : "string"},
         "driver_location" : { "$ref": "#/definitions/DriverLocation" }
       }
     }

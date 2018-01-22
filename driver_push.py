@@ -255,6 +255,9 @@ def storeEndpointArn(phone_number, user_name, token, identity_id, endpoint_arn):
         'token': {
             'S': token
         },
+        'delivery_count': {
+           'N': '0'
+        },
         'driver_status': {
             'S': 'off'
         }

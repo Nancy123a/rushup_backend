@@ -7,6 +7,9 @@ from boto3.dynamodb.conditions import Key, Attr
 from geoindex import GeoGridIndex, GeoPoint
 import delivery
 from user_push import push_message
+import utility
+
+
 dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
 table = dynamo_db.Table('driver_token')
 delivery_drivers_table = dynamo_db.Table('delivery_drivers')
@@ -132,6 +135,8 @@ def retrieve_driver(identity_id):
         },
         ProjectionExpression="identity_id,phone,driver_location,username,delivery_count"
     )
+
+    result = utility.replace_decimals(result)
 
     print json.dumps(result, encoding='ascii')
 
