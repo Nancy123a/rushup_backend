@@ -19,6 +19,7 @@
     "identity_id" : {"type": "string" },
     "username" : { "type" : "string" },
     "phone" : { "type" : "string" },
+    "delivery_count" : { "type" : "number"},
     "driver_location" : { "$ref": "#/definitions/Location" }
   }
 }
