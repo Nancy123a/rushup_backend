@@ -70,32 +70,43 @@ def update_delivery_status(event, context):
             # we should never reach this
             delivery_status = "unknown"
 
-    update_status(delivery_id, delivery_status)
+    if delivery_status in ["accepted", "rejected", "no_driver"]:
 
-    delivery = retrieve_delivery(delivery_id)
+        update_status(delivery_id, delivery_status)
 
-    if delivery_status == "accepted":
-        user_push.push_message(delivery, delivery["from"], "delivery_update")
-        step_input = dict()
-        step_input["delivery"] = delivery
+        delivery = retrieve_delivery(delivery_id)
 
-        step_response = stepfunctions.start_execution(
-            stateMachineArn=os.environ['driverAssignState'],
-            input=json.dumps(step_input)
-        )
-        print(step_response)
-        #driver_push.push_to_nearby_message(delivery, "delivery_new")
+        if delivery_status == "accepted":
+            user_push.push_message(delivery, delivery["from"], "delivery_update")
+            if delivery["from"] != delivery["identity_id"]:
+                user_push.push_message(delivery, delivery["identity_id"], "delivery_update")
+            step_input = dict()
+            step_input["delivery"] = delivery
+
+            step_response = stepfunctions.start_execution(
+                stateMachineArn=os.environ['driverAssignState'],
+                input=json.dumps(step_input)
+            )
+            print(step_response)
+        else:
+            # We should only reach this when no driver is their
+            user_push.push_message(delivery, delivery["to"], "delivery_update")
+            user_push.push_message(delivery, delivery["from"], "delivery_update")
+            if delivery["from"] != delivery["identity_id"]:
+                user_push.push_message(delivery, delivery["identity_id"], "delivery_update")
+
+        response = {
+            "statusCode": 200,
+            "body": json.dumps({})
+        }
+        return response
+
     else:
-        # We should only reach this when no driver is their
-        user_push.push_message(delivery, delivery["to"], "delivery_update")
-        user_push.push_message(delivery, delivery["from"], "delivery_update")
-
-    response = {
-        "statusCode": 200,
-        "body": json.dumps({})
-    }
-
-    return response
+        response = {
+            "statusCode": 500,
+            "body": "Invalid status"
+        }
+        return response
 
 
 def pick_up_dropoff_delivery(event, context):
@@ -122,7 +133,7 @@ def pick_up_dropoff_delivery(event, context):
         delivery["delivery_status"] = "delivered"
         user_push.push_message(delivery, delivery["to"], "delivery_update")
         user_push.push_message(delivery, delivery["from"], "delivery_update")
-        driver.update_driver_status_internal(delivery["driver"]["identity_id"], "on", "")
+        driver.update_driver_status_internal(delivery["driver"]["identity_id"], "on", None, True)
         response = {
             "statusCode": 200,
             "body": json.dumps({})

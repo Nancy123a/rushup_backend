@@ -83,7 +83,7 @@ def update_driver_status(event, context):
 
         identity_id = event["requestContext"]["identity"]["cognitoIdentityId"]
 
-        update_driver_status_internal(identity_id, body["status"], "")
+        update_driver_status_internal(identity_id, body["status"])
 
         response = {
             "statusCode": 200,
@@ -165,6 +165,8 @@ def update_location(event, context):
     )
 
     driver = result["Attributes"]
+
+    driver = utility.replace_decimals(driver)
 
     print json.dumps(driver, encoding='ascii')
 
