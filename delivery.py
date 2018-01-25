@@ -285,5 +285,7 @@ def check_if_delivery_timeout(event, context):
             delivery = retrieve_delivery(delivery_id)
             user_push.push_message(delivery, delivery["to"], "delivery_update")
             user_push.push_message(delivery, delivery["from"], "delivery_update")
+            if delivery["from"] != delivery["identity_id"]:
+                user_push.push_message(delivery, delivery["identity_id"], "delivery_update")
         else:
             print('delivery has been accepted')
