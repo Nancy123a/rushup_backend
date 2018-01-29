@@ -92,8 +92,9 @@ def update_delivery_status(event, context):
             # We should only reach this when no driver is their
             user_push.push_message(delivery, delivery["to"], "delivery_update")
             user_push.push_message(delivery, delivery["from"], "delivery_update")
-            if delivery["from"] != delivery["identity_id"]:
-                user_push.push_message(delivery, delivery["identity_id"], "delivery_update")
+            if delivery_status != "no_driver":
+                if delivery["from"] != delivery["identity_id"]:
+                    user_push.push_message(delivery, delivery["identity_id"], "delivery_update")
 
         response = {
             "statusCode": 200,

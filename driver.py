@@ -46,6 +46,8 @@ def get_delivery_drivers(event, context):
 
     locations = []
 
+    result = utility.replace_decimals(result)
+
     print json.dumps(result, encoding='ascii')
 
     if "Item" in result:
