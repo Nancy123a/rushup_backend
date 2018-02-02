@@ -7,6 +7,8 @@ import driver
 import utility
 import os
 import random
+from boto3.dynamodb.conditions import Key, Attr
+
 
 stepfunctions = boto3.client('stepfunctions')
 dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
@@ -181,6 +183,8 @@ def knock_monitor(event, context):
     return
 
 
+
+
 def get_distance(event, context):
     origin = event["origin"]
     destination = event["destination"]
@@ -193,6 +197,44 @@ def get_distance(event, context):
         return True
     else:
         return False
+
+def get_history(event,context):
+    print json.dumps(event)
+        #cognito-idp.eu-west-1.amazonaws.com/eu-west-1_w2rC3VeKI,cognito-idp.eu-west-1.amazonaws.com/eu-west-1_w2rC3VeKI:CognitoSignIn:9e3de258-a135-4753-b46d-0e16874098a4
+    user_name, phone_number = user_push.get_user(event["requestContext"]["identity"]["cognitoAuthenticationProvider"])
+
+    print (phone_number)
+
+    if user_name is None:
+        print("Unable to extract user from security Provider")
+        response = {
+            "statusCode": 500,
+            "body": "Error while getting user"
+        }
+        return response
+
+    to_delivered = table.query(
+        IndexName='to-delivery_date-index',
+        KeyConditionExpression=Key('to').eq(phone_number),
+       )
+
+    from_delivered = table.query(
+        IndexName='from-delivery_date-index',
+        KeyConditionExpression=Key('from').eq(phone_number),
+    )
+
+    to_delivered_array=to_delivered['Items']
+    from_delivered_array=from_delivered['Items']
+
+    # combine them
+    data= {'to_delivered':to_delivered_array,'from_delivered':from_delivered_array}
+
+
+    response = {
+        "statusCode": 201,
+        "body":json.dumps(data,cls=utility.DecimalEncoder)
+    }
+    return response
 
 
 # Method has to be called only by drivers
