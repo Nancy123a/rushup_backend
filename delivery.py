@@ -214,7 +214,7 @@ def get_history(event,context):
         return response
 
     identity_id_history = table.query(
-        IndexName='driver_id-delivery_date-index',
+        IndexName='identity_id-delivery_date-index',
         ScanIndexForward= False,
         KeyConditionExpression=Key('identity_id').eq(phone_number),
         Limit= 20
