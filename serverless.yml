@@ -34,8 +34,8 @@ provider:
         - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery"
         - "arn:aws:dynamodb:eu-west-1:261650959426:table/driver_token"
         - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery_drivers"
-        - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery/index/to-delivery_date-index"
-        - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery/index/from-delivery_date-index"
+        - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery/index/identity_id-delivery_date-index"
+        - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery/index/driver_id-delivery_date-index"
     - Effect: Allow
       Action:
         - sns:SetEndpointAttributes
@@ -228,6 +228,15 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Delivery History"
+  DriverHistory:
+    handler: delivery.get_driver_history
+    events:
+      - http:
+          path: driver/history
+          method: get
+          authorizer: aws_iam
+          documentation:
+            summary: "Drivery Delivery History"
   saveDriverToken:
     handler: driver_push.save_token
     events:

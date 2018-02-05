@@ -213,28 +213,62 @@ def get_history(event,context):
         }
         return response
 
-    to_delivered = table.query(
-        IndexName='to-delivery_date-index',
-        KeyConditionExpression=Key('to').eq(phone_number),
+    identity_id_history = table.query(
+        IndexName='driver_id-delivery_date-index',
+        ScanIndexForward= False,
+        KeyConditionExpression=Key('identity_id').eq(phone_number),
+        Limit= 20
        )
 
-    from_delivered = table.query(
-        IndexName='from-delivery_date-index',
-        KeyConditionExpression=Key('from').eq(phone_number),
-    )
+    identity_id_history_array=identity_id_history['Items']
 
-    to_delivered_array=to_delivered['Items']
-    from_delivered_array=from_delivered['Items']
+    data= {'identity_history':identity_id_history_array}
 
-    # combine them
-    data= {'to_delivered':to_delivered_array,'from_delivered':from_delivered_array}
-
+    print (json.dumps(data,cls=utility.DecimalEncoder))
 
     response = {
         "statusCode": 201,
         "body":json.dumps(data,cls=utility.DecimalEncoder)
     }
     return response
+
+def get_driver_history(event,context):
+
+    print json.dumps(event)
+
+    identity_id=event["requestContext"]["identity"]["cognitoIdentityId"]
+
+    print (identity_id)
+
+    if identity_id is None:
+        print("Unable to extract user from security Provider")
+        response = {
+            "statusCode": 500,
+            "body": "Error while getting driver id"
+        }
+        return response
+
+    driver_id_history = table.query(
+        IndexName='driver_id-delivery_date-index',
+        ScanIndexForward= False,
+        KeyConditionExpression=Key('driver_id').eq(identity_id),
+        Limit= 20
+    )
+
+    print (driver_id_history)
+
+    driver_id_history_array=driver_id_history['Items']
+
+    data= {'driver_history':driver_id_history_array}
+
+    print (json.dumps(data,cls=utility.DecimalEncoder))
+
+    response = {
+        "statusCode": 201,
+        "body":json.dumps(data,cls=utility.DecimalEncoder)
+    }
+    return response
+
 
 
 # Method has to be called only by drivers
