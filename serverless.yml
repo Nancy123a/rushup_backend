@@ -159,6 +159,7 @@ functions:
             summary: "Update delivery report status"
             requestModels:
               "application/json": DeliveryStatusRequest
+
   getDelivery:
     handler: delivery.get_delivery
     events:
@@ -219,6 +220,28 @@ functions:
             summary: "Send push notification to another Rushie User"
             requestModels:
               "application/json": PushRequest
+
+  createGroup:
+    handler: group.save
+    events:
+      - http:
+          path: group
+          method: put
+          authorizer: aws_iam
+          documentation:
+        	summary: "Create Group for Company"
+
+  AssignUser:
+    handler: group.assign_user
+    events:
+      - http:
+          path: group/assign
+          method: post
+          authorizer: aws_iam
+          documentation:
+            summary: "Aiign User To Group"
+
+
   History:
     handler: delivery.get_history
     events:
