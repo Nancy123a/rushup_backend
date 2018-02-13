@@ -1,6 +1,7 @@
 import boto3
 import json
 import os
+import utility
 
 cognito = boto3.client('cognito-idp')
 
@@ -61,5 +62,33 @@ def delete_user(event,context):
     response = {
         "statusCode": 201,
         "body": "{}"
+    }
+    return response
+
+def get_all_users_in_group(event,context):
+    print json.dumps(event,  encoding='ascii')
+
+    body= json.loads(event['body'])
+    group_name=body['group_name']
+
+    response = cognito.list_users_in_group(
+        UserPoolId=os.environ["identityPoolId"],
+        GroupName=group_name
+    )
+
+    list_of_user=[]
+
+    if len(response["Users"]) > 0:
+        users=response['Users']
+        for user in users:
+            list_of_user.append(user['Username'])
+
+    data= {'user_list':list_of_user}
+
+    print (json.dumps(data))
+
+    response = {
+        "statusCode": 201,
+        "body":json.dumps(data)
     }
     return response

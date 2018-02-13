@@ -251,6 +251,16 @@ functions:
           documentation:
             summary: "Delete User From Group"
 
+  GetAllUsersInGroup:
+    handler: group.get_all_users_in_group
+    events:
+      - http:
+         path: group/{group_name}
+         method: get
+         authorizer: aws_iam
+         documentation:
+           summary: "Get all users from a group"
+
   History:
     handler: delivery.get_history
     events:
