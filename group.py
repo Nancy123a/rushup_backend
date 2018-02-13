@@ -31,7 +31,7 @@ def assign_user(event,context):
     email=body['email']
     group_name=body['group_name']
 
-    print ("group name "+group_name);
+    print ("group name "+group_name)
 
     addUser = cognito.admin_add_user_to_group(
         UserPoolId=os.environ["identityPoolId"],
@@ -45,3 +45,21 @@ def assign_user(event,context):
     }
     return response
 
+def delete_user(event,context):
+    print json.dumps(event,  encoding='ascii')
+
+    body= json.loads(event['body'])
+    email=body['email']
+    group_name=body['group_name']
+
+    response = cognito.admin_remove_user_from_group(
+        UserPoolId=os.environ["identityPoolId"],
+        Username=email,
+        GroupName=group_name
+    )
+
+    response = {
+        "statusCode": 201,
+        "body": "{}"
+    }
+    return response

@@ -239,8 +239,17 @@ functions:
           method: post
           authorizer: aws_iam
           documentation:
-            summary: "Aiign User To Group"
+            summary: "Assign User To Group"
 
+  DeleteUserFromGroup:
+    handler: group.delete_user
+    events:
+      - http:
+          path: group/delete
+          method: delete
+          authorizer: aws_iam
+          documentation:
+            summary: "Delete User From Group"
 
   History:
     handler: delivery.get_history
