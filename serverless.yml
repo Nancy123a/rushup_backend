@@ -103,6 +103,10 @@ custom:
         contentType: "application/json"
         schema: ${file(models/driverStatusRequest.json)}
       -
+        name: Group
+        contentType: "application/json"
+        schema: ${file(models/group.json)}
+      -
         name: Driver
         contentType: "application/json"
         schema: ${file(models/driver.json)}
@@ -144,6 +148,7 @@ functions:
               - statusCode: '201'
                 responseModels:
                   "application/json": DeliveryRequest
+
   updateDeliveryStatus:
     handler: delivery.update_delivery_status
     events:
@@ -222,11 +227,11 @@ functions:
               "application/json": PushRequest
 
   createGroup:
-    handler: group.save
+    handler: group.create_group
     events:
       - http:
           path: group
-          method: put
+          method: get
           authorizer: aws_iam
           documentation:
         	summary: "Create Group for Company"
@@ -240,6 +245,8 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Assign User To Group"
+            requestModels:
+              "application/json": Group
 
   DeleteUserFromGroup:
     handler: group.delete_user
@@ -250,16 +257,28 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Delete User From Group"
+            requestModels:
+              "application/json": Group
 
   GetAllUsersInGroup:
     handler: group.get_all_users_in_group
     events:
       - http:
-         path: group/{group_name}
+         path: group/getusers
          method: get
          authorizer: aws_iam
          documentation:
            summary: "Get all users from a group"
+
+  getGroupsOfUser:
+      handler: group.get_all_group_of_users
+      events:
+        - http:
+            path: rushie/group
+            method: get
+            authorizer: aws_iam
+            documentation:
+              summary: "Get Users of specific group"
 
   History:
     handler: delivery.get_history

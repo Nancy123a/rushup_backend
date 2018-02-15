@@ -1,19 +1,21 @@
 import boto3
 import json
 import os
+
+import driver_push
+import user_push
 import utility
 
 cognito = boto3.client('cognito-idp')
 
-def save(event,context):
+def create_group(event,context):
 
     print json.dumps(event,  encoding='ascii')
-    body = json.loads(event['body'])
-    group_name =body['group_name']
+    user_name, phone_number = user_push.get_user(event["requestContext"]["identity"]["cognitoAuthenticationProvider"])
     userPoolId=os.environ["identityPoolId"]
 
     group = cognito.create_group(
-    GroupName=group_name,
+    GroupName=user_name,
     UserPoolId=userPoolId,
     Description="Company group"
     )
@@ -29,14 +31,14 @@ def assign_user(event,context):
 
     print json.dumps(event,  encoding='ascii')
     body= json.loads(event['body'])
-    email=body['email']
+    username=body['username']
     group_name=body['group_name']
 
     print ("group name "+group_name)
 
     addUser = cognito.admin_add_user_to_group(
         UserPoolId=os.environ["identityPoolId"],
-        Username=email,
+        Username=username,
         GroupName=group_name
     )
 
@@ -50,12 +52,12 @@ def delete_user(event,context):
     print json.dumps(event,  encoding='ascii')
 
     body= json.loads(event['body'])
-    email=body['email']
+    username=body['username']
     group_name=body['group_name']
 
     response = cognito.admin_remove_user_from_group(
         UserPoolId=os.environ["identityPoolId"],
-        Username=email,
+        Username=username,
         GroupName=group_name
     )
 
@@ -68,12 +70,11 @@ def delete_user(event,context):
 def get_all_users_in_group(event,context):
     print json.dumps(event,  encoding='ascii')
 
-    body= json.loads(event['body'])
-    group_name=body['group_name']
+    user_name, phone_number = user_push.get_user(event["requestContext"]["identity"]["cognitoAuthenticationProvider"])
 
     response = cognito.list_users_in_group(
         UserPoolId=os.environ["identityPoolId"],
-        GroupName=group_name
+        GroupName=user_name
     )
 
     list_of_user=[]
@@ -83,7 +84,9 @@ def get_all_users_in_group(event,context):
         for user in users:
             list_of_user.append(user['Username'])
 
-    data= {'user_list':list_of_user}
+    data= dict()
+
+    data['users_list'] = list_of_user
 
     print (json.dumps(data))
 
@@ -91,4 +94,33 @@ def get_all_users_in_group(event,context):
         "statusCode": 201,
         "body":json.dumps(data)
     }
+    return response
+
+def get_all_group_of_users(event,context):
+
+    print json.dumps(event,  encoding='ascii')
+
+    user_name, phone_number = user_push.get_user(event["requestContext"]["identity"]["cognitoAuthenticationProvider"])
+
+    list_of_groups=[]
+
+    response = cognito.admin_list_groups_for_user(
+        Username=user_name,
+        UserPoolId=os.environ["identityPoolId"],
+    )
+
+    if len(response["Groups"])>0:
+        for key in response['Groups']:
+            list_of_groups.append(key['GroupName'])
+
+    data = dict()
+
+    data['groups_list'] = list_of_groups
+
+    print (json.dumps(data))
+    response = {
+        "statusCode": 201,
+        "body":json.dumps(data)
+    }
+
     return response

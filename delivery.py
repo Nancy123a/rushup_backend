@@ -222,7 +222,9 @@ def get_history(event,context):
 
     identity_id_history_array=identity_id_history['Items']
 
-    data= {'identity_history':identity_id_history_array}
+    data= dict()
+
+    data['identity_history'] = identity_id_history_array
 
     print (json.dumps(data,cls=utility.DecimalEncoder))
 
