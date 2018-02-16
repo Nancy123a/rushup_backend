@@ -289,6 +289,16 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Delivery History"
+
+  ClearHistory:
+    handler: delivery.clear_history
+    events:
+      - http:
+          path: delivery/history/clear
+          method: delete
+          authorizer: aws_iam
+          documentation:
+            summary: "Clear History"
   DriverHistory:
     handler: delivery.get_driver_history
     events:

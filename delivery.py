@@ -234,6 +234,26 @@ def get_history(event,context):
     }
     return response
 
+def clear_history(event,context):
+    print json.dumps(event)
+
+    user_name, phone_number = user_push.get_user(event["requestContext"]["identity"]["cognitoAuthenticationProvider"])
+
+    print (phone_number)
+
+    table.delete_item(
+        Key={
+            'identity_id': phone_number
+        }
+    )
+
+    response = {
+        "statusCode": 201,
+        "body": json.dumps({})
+    }
+
+    return response
+
 def get_driver_history(event,context):
 
     print json.dumps(event)

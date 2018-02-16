@@ -11,20 +11,22 @@ cognito = boto3.client('cognito-idp')
 def create_group(event,context):
 
     print json.dumps(event,  encoding='ascii')
-    user_name, phone_number = user_push.get_user(event["requestContext"]["identity"]["cognitoAuthenticationProvider"])
+    user_name= event["userName"]
+    type=event["request"]["userAttributes"]["custom:type"]
     userPoolId=os.environ["identityPoolId"]
 
-    group = cognito.create_group(
-    GroupName=user_name,
-    UserPoolId=userPoolId,
-    Description="Company group"
-    )
-    print(group)
-    response = {
-    "statusCode": 201,
-    "body": "{}"
-   }
-    return response
+    print(type)
+
+    if type is "company":
+     cognito.create_group(
+     GroupName=user_name,
+     UserPoolId=userPoolId,
+     Description="Company group"
+     )
+
+    return event
+
+
 
 
 def assign_user(event,context):
@@ -101,6 +103,8 @@ def get_all_group_of_users(event,context):
     print json.dumps(event,  encoding='ascii')
 
     user_name, phone_number = user_push.get_user(event["requestContext"]["identity"]["cognitoAuthenticationProvider"])
+
+    print(user_name)
 
     list_of_groups=[]
 
