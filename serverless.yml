@@ -242,19 +242,43 @@ functions:
       - http:
           path: group/assign
           method: post
-          authorizer: aws_iam
+          cors: true
+          authorizer: arn:aws:cognito-idp:eu-west-1:261650959426:userpool/eu-west-1_w2rC3VeKI
           documentation:
             summary: "Assign User To Group"
             requestModels:
               "application/json": Group
+
+  CheckIfCompany:
+    handler: group.check_if_company
+    events:
+      - http:
+          path: check
+          method: get
+          cors: true
+          authorizer: arn:aws:cognito-idp:eu-west-1:261650959426:userpool/eu-west-1_w2rC3VeKI
+          documentation:
+            summary: "Check if Company"
+
+  GetAllUsersCognito:
+    handler: group.get_all_users_in_group_cognito
+    events:
+      - http:
+          path: group/userscognito
+          method: get
+          cors: true
+          authorizer: arn:aws:cognito-idp:eu-west-1:261650959426:userpool/eu-west-1_w2rC3VeKI
+          documentation:
+            summary: " Get users for a group in website"
 
   DeleteUserFromGroup:
     handler: group.delete_user
     events:
       - http:
           path: group/delete
-          method: delete
-          authorizer: aws_iam
+          method: post
+          cors: true
+          authorizer: arn:aws:cognito-idp:eu-west-1:261650959426:userpool/eu-west-1_w2rC3VeKI
           documentation:
             summary: "Delete User From Group"
             requestModels:

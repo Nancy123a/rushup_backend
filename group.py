@@ -27,26 +27,38 @@ def create_group(event,context):
     return event
 
 
+def check_if_company(event,context):
 
+    print json.dumps(event, encoding='ascii')
+    type=event['requestContext']['authorizer']['claims']['custom:type']
+
+    response = {
+        "statusCode": 201,
+        "headers" : { "Access-Control-Allow-Origin" : "*" },  # Required for CORS support to work
+        "body": json.dumps(type)
+    }
+    return response
 
 def assign_user(event,context):
 
     print json.dumps(event,  encoding='ascii')
+
     body= json.loads(event['body'])
-    username=body['username']
+    email=body['email']
     group_name=body['group_name']
 
     print ("group name "+group_name)
 
     addUser = cognito.admin_add_user_to_group(
         UserPoolId=os.environ["identityPoolId"],
-        Username=username,
+        Username=email,
         GroupName=group_name
     )
 
     response = {
         "statusCode": 201,
-        "body": "{}"
+        "headers" : { "Access-Control-Allow-Origin" : "*" },  # Required for CORS support to work
+        "body": json.dumps({})
     }
     return response
 
@@ -54,20 +66,23 @@ def delete_user(event,context):
     print json.dumps(event,  encoding='ascii')
 
     body= json.loads(event['body'])
-    username=body['username']
+    email=body['email']
     group_name=body['group_name']
 
     response = cognito.admin_remove_user_from_group(
         UserPoolId=os.environ["identityPoolId"],
-        Username=username,
+        Username=email,
         GroupName=group_name
     )
 
     response = {
         "statusCode": 201,
-        "body": "{}"
+        "headers" : { "Access-Control-Allow-Origin" : "*" },  # Required for CORS support to work
+        "body": json.dumps({})
     }
     return response
+
+
 
 def get_all_users_in_group(event,context):
     print json.dumps(event,  encoding='ascii')
@@ -97,6 +112,41 @@ def get_all_users_in_group(event,context):
         "body":json.dumps(data)
     }
     return response
+
+def get_all_users_in_group_cognito(event,context):
+
+    print json.dumps(event,  encoding='ascii')
+
+    group_name=event['requestContext']['authorizer']['claims']['name']
+
+    response = cognito.list_users_in_group(
+    UserPoolId=os.environ["identityPoolId"],
+    GroupName=group_name
+    )
+
+    list_of_user=[]
+
+    if len(response["Users"]) > 0:
+     users=response['Users']
+     for user in users:
+         username=user['Username']
+         phone=user['Attributes'][4]['Value']
+         email=user['Attributes'][7]['Value']
+         _user=username+","+phone+","+email
+         list_of_user.append(_user)
+
+         data = dict()
+
+         data['users_list'] = list_of_user
+
+         print (json.dumps(data))
+
+         response = {
+         "statusCode": 201,
+         "headers" : { "Access-Control-Allow-Origin" : "*" },  # Required for CORS support to work
+          "body":json.dumps(data)
+         }
+         return response
 
 def get_all_group_of_users(event,context):
 
