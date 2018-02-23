@@ -87,7 +87,7 @@ def get_all_users_in_group(event,context):
     user_name, phone_number = user_push.get_user(event["requestContext"]["identity"]["cognitoAuthenticationProvider"])
 
     response = cognito.list_users_in_group(
-        UserPoolId=os.environ["identityPoolId"],
+        UserPoolId='eu-west-1_w2rC3VeKI',
         GroupName=user_name
     )
 
@@ -163,7 +163,7 @@ def get_all_group_of_users(event,context):
 
     response = cognito.admin_list_groups_for_user(
         Username=user_name,
-        UserPoolId=os.environ["identityPoolId"],
+        UserPoolId='eu-west-1_w2rC3VeKI',
     )
 
     if len(response["Groups"])>0:
