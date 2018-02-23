@@ -13,14 +13,12 @@ def create_group(event,context):
     print json.dumps(event,  encoding='ascii')
     user_name= event["userName"]
     type=event["request"]["userAttributes"]["custom:type"]
-    userPoolId=os.environ["identityPoolId"]
 
-    print(type)
-
-    if type is "company":
-     cognito.create_group(
+    if type == "company":
+        print(type)
+    cognito.create_group(
      GroupName=user_name,
-     UserPoolId=userPoolId,
+     UserPoolId='eu-west-1_w2rC3VeKI',
      Description="Company group"
      )
 
@@ -48,9 +46,8 @@ def assign_user(event,context):
     group_name=body['group_name']
 
     print ("group name "+group_name)
-
     addUser = cognito.admin_add_user_to_group(
-        UserPoolId=os.environ["identityPoolId"],
+        UserPoolId='eu-west-1_w2rC3VeKI',
         Username=email,
         GroupName=group_name
     )
@@ -70,7 +67,7 @@ def delete_user(event,context):
     group_name=body['group_name']
 
     response = cognito.admin_remove_user_from_group(
-        UserPoolId=os.environ["identityPoolId"],
+        UserPoolId='eu-west-1_w2rC3VeKI',
         Username=email,
         GroupName=group_name
     )
@@ -120,7 +117,7 @@ def get_all_users_in_group_cognito(event,context):
     group_name=event['requestContext']['authorizer']['claims']['name']
 
     response = cognito.list_users_in_group(
-    UserPoolId=os.environ["identityPoolId"],
+    UserPoolId='eu-west-1_w2rC3VeKI',
     GroupName=group_name
     )
 
@@ -132,21 +129,27 @@ def get_all_users_in_group_cognito(event,context):
          username=user['Username']
          phone=user['Attributes'][4]['Value']
          email=user['Attributes'][7]['Value']
+         print (username)
          _user=username+","+phone+","+email
          list_of_user.append(_user)
 
-         data = dict()
+     data = dict()
 
-         data['users_list'] = list_of_user
+     data['users_list'] = list_of_user
 
-         print (json.dumps(data))
-
-         response = {
+     if len(data) > 0:
+      response = {
          "statusCode": 201,
          "headers" : { "Access-Control-Allow-Origin" : "*" },  # Required for CORS support to work
           "body":json.dumps(data)
          }
-         return response
+     else:
+         response = {
+             "statusCode":400,
+             "headers" : { "Access-Control-Allow-Origin" : "*" },  # Required for CORS support to work
+             "body":"no users found in this group"
+         }
+     return response
 
 def get_all_group_of_users(event,context):
 
