@@ -9,10 +9,11 @@ import delivery
 from user_push import push_message
 import utility
 
-
 dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
 table = dynamo_db.Table('driver_token')
 delivery_drivers_table = dynamo_db.Table('delivery_drivers')
+cognito = boto3.client('cognito-idp')
+
 
 
 def get_driver(event, context):
@@ -135,7 +136,7 @@ def retrieve_driver(identity_id):
         Key={
             'identity_id': identity_id
         },
-        ProjectionExpression="identity_id,phone,driver_location,username,delivery_count"
+        ProjectionExpression="identity_id,phone,driver_location,username,delivery_count,score"
     )
 
     result = utility.replace_decimals(result)
@@ -226,6 +227,7 @@ def get_available_drivers(event, context):
         center_point = GeoPoint(float(dlv["pickup_location"]["latitude"]), float(dlv["pickup_location"]["longitude"]))
         radius = int(os.environ["driverMinLookupRadius"])
         max_radius = int(os.environ["driverMaxLookupRadius"])
+        max_radius = int(os.environ["driverMaxLookupRadius"])
         while not drivers:
             print "Searching for drivers in {} km radius".format(radius)
             for point, distance in index.get_nearest_points(center_point, radius, 'km'):
@@ -266,3 +268,28 @@ def get_available_drivers(event, context):
     return_item["result"] = selected_drivers
     return_item["driver_count"] = len(selected_drivers)
     return return_item
+
+def update_score(event,context):
+
+    body = json.loads(event['body'])
+    print(body)
+    score = body["score"]
+    driver_id=body["identity_id"]
+    print("score "+score+" driver_id "+driver_id)
+    key = {
+        'identity_id': driver_id
+    }
+
+    table.update_item(
+    Key=key,
+    UpdateExpression='SET score = :val1',
+    ExpressionAttributeValues={
+    ':val1': score
+    }
+    )
+    response = {
+        "statusCode": 200,
+        "body": json.dumps({})
+    }
+
+    return response

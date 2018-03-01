@@ -36,6 +36,7 @@ provider:
         - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery_drivers"
         - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery/index/identity_id-delivery_date-index"
         - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery/index/driver_id-delivery_date-index"
+        - "arn:aws:dynamodb:eu-west-1:261650959426:table/driver_token/index/username-index"
     - Effect: Allow
       Action:
         - sns:SetEndpointAttributes
@@ -87,6 +88,10 @@ custom:
         contentType: "application/json"
         schema: ${file(models/pushRequest.json)}
       -
+        name: Score
+        contentType: "application/json"
+        schema: ${file(models/score.json)}
+      -
         name: ContactSyncRequest
         contentType: "application/json"
         schema: ${file(models/contactSyncRequest.json)}
@@ -102,10 +107,6 @@ custom:
         name: DriverStatusRequest
         contentType: "application/json"
         schema: ${file(models/driverStatusRequest.json)}
-      -
-        name: Group
-        contentType: "application/json"
-        schema: ${file(models/group.json)}
       -
         name: Driver
         contentType: "application/json"
@@ -226,83 +227,16 @@ functions:
             requestModels:
               "application/json": PushRequest
 
-  createGroup:
-    handler: group.create_group
+  createDriverRegistrationCode:
+    handler: driver_push.save_registration_code
     events:
       - http:
-          path: group
-          method: get
-          authorizer: aws_iam
-          documentation:
-        	summary: "Create Group for Company"
-
-  AssignUser:
-    handler: group.assign_user
-    events:
-      - http:
-          path: group/assign
+          path: driver/code/createcode
           method: post
           cors: true
           authorizer: arn:aws:cognito-idp:eu-west-1:261650959426:userpool/eu-west-1_w2rC3VeKI
           documentation:
-            summary: "Assign User To Group"
-            requestModels:
-              "application/json": Group
-
-  CheckIfCompany:
-    handler: group.check_if_company
-    events:
-      - http:
-          path: check
-          method: get
-          cors: true
-          authorizer: arn:aws:cognito-idp:eu-west-1:261650959426:userpool/eu-west-1_w2rC3VeKI
-          documentation:
-            summary: "Check if Company"
-
-  GetAllUsersCognito:
-    handler: group.get_all_users_in_group_cognito
-    events:
-      - http:
-          path: group/userscognito
-          method: get
-          cors: true
-          authorizer: arn:aws:cognito-idp:eu-west-1:261650959426:userpool/eu-west-1_w2rC3VeKI
-          documentation:
-            summary: " Get users for a group in website"
-
-  DeleteUserFromGroup:
-    handler: group.delete_user
-    events:
-      - http:
-          path: group/delete
-          method: post
-          cors: true
-          authorizer: arn:aws:cognito-idp:eu-west-1:261650959426:userpool/eu-west-1_w2rC3VeKI
-          documentation:
-            summary: "Delete User From Group"
-            requestModels:
-              "application/json": Group
-
-  GetAllUsersInGroup:
-    handler: group.get_all_users_in_group
-    events:
-      - http:
-         path: group/getusers
-         method: get
-         authorizer: aws_iam
-         documentation:
-           summary: "Get all users from a group"
-
-  getGroupsOfUser:
-      handler: group.get_all_group_of_users
-      events:
-        - http:
-            path: rushie/group
-            method: get
-            authorizer: aws_iam
-            documentation:
-              summary: "Get Users of specific group"
+            summary: "create driver registration code"
 
   History:
     handler: delivery.get_history
@@ -343,6 +277,24 @@ functions:
             summary: "Manage Endpoint platform"
             requestModels:
               "application/json": TokenRequest
+
+
+
+  CheckCode:
+    handler: driver_push.get_driver_code
+    events:
+      - http:
+          path: driver/code/checkcode
+          method: post
+          documentation:
+            summary: "Check registration code of driver"
+            requestModels:
+              "application/json": Driver
+            methodResponses:
+              - statusCode: '200'
+                responseModels:
+                  "application/json": Driver
+
   updateDriverLocation:
     handler: driver.update_location
     events:
@@ -369,6 +321,7 @@ functions:
             summary: "Update Delivery Pickup and Dropoff"
             requestModels:
               "application/json": DeliveryPickUpDropoff
+
   getDeliveryDrivers:
     handler: driver.get_delivery_drivers
     events:
@@ -414,6 +367,20 @@ functions:
               - statusCode: '200'
                 responseModels:
                   "application/json": Driver
+
+  updateDriverScore:
+    handler: driver.update_score
+    events:
+      - http:
+          path: driver/score/updatescore
+          method: put
+          authorizer: aws_iam
+          documentation:
+            summary: " Update driver score "
+            methodResponses:
+              - statusCode: '200'
+                requestModels:
+                  "application/json": Score
 
   contactSync:
     handler: contacts.sync

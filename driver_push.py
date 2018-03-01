@@ -2,13 +2,82 @@ import json
 import boto3
 import re
 import os
+import utility
 import driver
+from boto3.dynamodb.conditions import Key, Attr
 
 dynamo_db = boto3.client('dynamodb')
 cognito = boto3.client('cognito-idp')
 sns = boto3.client('sns')
-
+_dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
+table = _dynamo_db.Table('driver_token')
 table_name = 'driver_token'
+
+def save_registration_code(event,context):
+
+    print json.dumps(event,  encoding='ascii')
+    body= json.loads(event['body'])
+
+    phonenumber=body['phonenumber']
+    code=body['code']
+    drivername=body['drivername']
+    password=body['password']
+
+    print (phonenumber+"  "+code+"  "+drivername+" "+password)
+
+    cognito.admin_create_user(
+        UserPoolId='eu-west-1_w2rC3VeKI',
+        Username=drivername,
+        UserAttributes=[
+            {
+                'Name': 'phone_number',
+                'Value': phonenumber
+            },
+            {
+                'Name':'custom:code',
+                'Value':code
+            },
+            {
+                'Name':'phone_number_verified',
+                'Value':'true'
+            },
+
+
+        ],
+        ValidationData=[
+            {
+                'Name': 'phone_number_verified',
+                'Value': 'true'
+            },
+
+        ],
+        TemporaryPassword=password,
+
+    )
+
+    cognito.admin_add_user_to_group(
+        UserPoolId='eu-west-1_w2rC3VeKI',
+        Username=drivername,
+        GroupName='drivers'
+    )
+
+
+    response = {
+        "statusCode": 201,
+        "headers" : { "Access-Control-Allow-Origin" : "*" },  # Required for CORS support to work
+        "body": json.dumps({})
+    }
+    return response
+
+def get_driver_code(event,context):
+    print json.dumps(event,  encoding='ascii')
+
+    response = {
+        "statusCode": 201,
+        "body": json.dumps({})
+    }
+
+    return response
 
 
 def save_token(event, context):
@@ -260,6 +329,9 @@ def storeEndpointArn(phone_number, user_name, token, identity_id, endpoint_arn):
         },
         'driver_status': {
             'S': 'off'
+        },
+        'score':{
+            'N':'0'
         }
     }
 

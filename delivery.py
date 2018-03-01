@@ -14,7 +14,7 @@ stepfunctions = boto3.client('stepfunctions')
 dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
 
 table = dynamo_db.Table('delivery')
-
+driver_token_table=dynamo_db.Table('driver_token')
 
 def save_delivery(event, context):
 
@@ -303,6 +303,8 @@ def assign_delivery(event, context):
     driver_id = event["requestContext"]["identity"]["cognitoIdentityId"]
 
     delivery_driver = driver.retrieve_driver(driver_id)
+
+    print(json.dumps(delivery_driver))
 
     delivery_status = 'assigned'
 

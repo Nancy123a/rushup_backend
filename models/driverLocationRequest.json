@@ -3,7 +3,7 @@
   "title" : "Driver Location Request",
   "type" : "object",
   "properties" : {
-    "latitude" : { "type" : "string" },
-    "longitude" : { "type" : "string" }
-  }
+  "latitude" : { "type" : "string" },
+  "longitude" : { "type" : "string" }
+}
 }

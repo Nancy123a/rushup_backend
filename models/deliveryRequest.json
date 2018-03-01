@@ -33,6 +33,7 @@
         "username" : { "type" : "string" },
         "phone" : { "type" : "string" },
         "delivery_count" : { "type" : "string"},
+        "score":{"type":"string"},
         "driver_location" : { "$ref": "#/definitions/DriverLocation" }
       }
     }
