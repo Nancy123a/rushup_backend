@@ -266,7 +266,7 @@ def get_driver_history(event,context):
         print("Unable to extract user from security Provider")
         response = {
             "statusCode": 500,
-            "body": "Error while getting driver id"
+            "body": "Error while gettng driver id"
         }
         return response
 
@@ -291,6 +291,40 @@ def get_driver_history(event,context):
     }
     return response
 
+def get_driver_balance(event,context):
+    print json.dumps(event)
+
+    identity_id=event["requestContext"]["identity"]["cognitoIdentityId"]
+
+    print (identity_id)
+
+    if identity_id is None:
+       print("Unable to extract user from security Provider")
+       response = {
+        "statusCode": 500,
+        "body": "Error while getting driver id"
+       }
+       return response
+
+    driver_id_balance = table.query(
+        IndexName='driver_id-delivery_status-index',
+        ScanIndexForward= False,
+        KeyConditionExpression=Key('driver_id').eq(identity_id) & Key('delivery_status').eq("delivered")
+     )
+
+    print (driver_id_balance)
+
+    driver_id_balance_array=driver_id_balance['Items']
+
+    data= {'driver_balance':driver_id_balance_array}
+
+    print (json.dumps(data,cls=utility.DecimalEncoder))
+
+    response = {
+        "statusCode": 201,
+        "body":json.dumps(data,cls=utility.DecimalEncoder)
+    }
+    return response
 
 
 # Method has to be called only by drivers

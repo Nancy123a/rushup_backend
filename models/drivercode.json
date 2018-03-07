@@ -1,0 +1,9 @@
+{
+  "$schema" : "http://json-schema.org/draft-04/schema#",
+  "title" : "Driver Code",
+  "type" : "object",
+  "properties" : {
+    "username" : { "type" : "string" },
+    "code" : { "type" : "string" }
+  }
+}

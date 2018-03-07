@@ -2,6 +2,7 @@ import json
 import boto3
 import re
 import os
+import user_push
 import utility
 import driver
 from boto3.dynamodb.conditions import Key, Attr
@@ -11,73 +12,56 @@ cognito = boto3.client('cognito-idp')
 sns = boto3.client('sns')
 _dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
 table = _dynamo_db.Table('driver_token')
+driver_code_table=_dynamo_db.Table('driver_code')
 table_name = 'driver_token'
 
-def save_registration_code(event,context):
 
+def get_driver_code(event,context):
     print json.dumps(event,  encoding='ascii')
-    body= json.loads(event['body'])
+    body = json.loads(event['body'])
 
-    phonenumber=body['phonenumber']
-    code=body['code']
-    drivername=body['drivername']
-    password=body['password']
+    drivername=body["username"]
 
-    print (phonenumber+"  "+code+"  "+drivername+" "+password)
-
-    cognito.admin_create_user(
-        UserPoolId='eu-west-1_w2rC3VeKI',
-        Username=drivername,
-        UserAttributes=[
-            {
-                'Name': 'phone_number',
-                'Value': phonenumber
-            },
-            {
-                'Name':'custom:code',
-                'Value':code
-            },
-            {
-                'Name':'phone_number_verified',
-                'Value':'true'
-            },
-
-
-        ],
-        ValidationData=[
-            {
-                'Name': 'phone_number_verified',
-                'Value': 'true'
-            },
-
-        ],
-        TemporaryPassword=password,
-
+    response = driver_code_table.get_item(
+        Key={
+            'username': drivername,
+        }
     )
 
+    print(json.dumps(response))
+
+    print (len(response))
+
+    if len(response)==2:
+        response = {
+            "statusCode": 201,
+            "body": json.dumps(response['Item'])
+        }
+
+        return response
+    else:
+        print("please enter correct user")
+        response = {
+            "statusCode": 500,
+            "body": "Enter your correct user name"
+        }
+        return  response
+
+def add_driver_to_group(event,context):
+    print json.dumps(event,  encoding='ascii')
+    body = json.loads(event['body'])
+    drivername=body["username"]
     cognito.admin_add_user_to_group(
         UserPoolId='eu-west-1_w2rC3VeKI',
         Username=drivername,
         GroupName='drivers'
     )
-
-
-    response = {
-        "statusCode": 201,
-        "headers" : { "Access-Control-Allow-Origin" : "*" },  # Required for CORS support to work
-        "body": json.dumps({})
-    }
-    return response
-
-def get_driver_code(event,context):
-    print json.dumps(event,  encoding='ascii')
-
     response = {
         "statusCode": 201,
         "body": json.dumps({})
     }
-
     return response
+
 
 
 def save_token(event, context):
@@ -86,9 +70,10 @@ def save_token(event, context):
 
     # Parse the body as json object
     body = json.loads(event['body'])
-
+    # cognito-idp.eu-west-1.amazonaws.com/eu-west-1_w2rC3VeKI,cognito-idp.eu-west-1.amazonaws.com/eu-west-1_w2rC3VeKI:CognitoSignIn:2eba5ea1-6845-46e5-9bc8-0da3faaafec4
     user_name, phone_number = get_user(event["requestContext"]["identity"]["cognitoAuthenticationProvider"])
 
+    print("username "+user_name+" phone_number "+phone_number)
     identity_id = event["requestContext"]["identity"]["cognitoIdentityId"]
 
     if user_name is None:
@@ -206,7 +191,7 @@ def push_message(message, identity_id, message_type, endpointArn = None):
 
 
 def registerWithSNS(phone_number, user_name, token, identity_id):
-
+    print ("phone number "+phone_number+" username "+user_name+" token "+token+" identity_id "+identity_id)
     endpointArn = retrieveEndpointArn(identity_id)
 
     updateNeeded = False
@@ -372,8 +357,10 @@ def get_user(cognitoAuthenticationProvider):
         for attribute in user["Attributes"]:
             if attribute["Name"] == "phone_number":
                 phone_number = attribute["Value"]
+                print("Phone number "+phone_number)
         if phone_number is None:
             return None, None
         return user["Username"], phone_number
     else:
+        print("no result")
         return None, None
