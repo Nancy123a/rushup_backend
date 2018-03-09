@@ -203,6 +203,10 @@ def get_history(event,context):
         #cognito-idp.eu-west-1.amazonaws.com/eu-west-1_w2rC3VeKI,cognito-idp.eu-west-1.amazonaws.com/eu-west-1_w2rC3VeKI:CognitoSignIn:9e3de258-a135-4753-b46d-0e16874098a4
     user_name, phone_number = user_push.get_user(event["requestContext"]["identity"]["cognitoAuthenticationProvider"])
 
+    body = json.loads(event['body'])
+
+    delivery_date=body['delivery_date']
+
     print (phone_number)
 
     if user_name is None:
@@ -216,7 +220,7 @@ def get_history(event,context):
     identity_id_history = table.query(
         IndexName='identity_id-delivery_date-index',
         ScanIndexForward= False,
-        KeyConditionExpression=Key('identity_id').eq(phone_number),
+        KeyConditionExpression=Key('identity_id').eq(phone_number) & Key('delivery_date').gt(delivery_date),
         Limit= 20
        )
 
@@ -233,6 +237,48 @@ def get_history(event,context):
         "body":json.dumps(data,cls=utility.DecimalEncoder)
     }
     return response
+
+def get_promotion(event,context):
+    user_name, phone_number = user_push.get_user(event["requestContext"]["identity"]["cognitoAuthenticationProvider"])
+
+    print (phone_number)
+
+    if user_name is None:
+        print("Unable to extract user from security Provider")
+        response = {
+            "statusCode": 500,
+            "body": "Error while getting user"
+        }
+        return response
+
+    from_promotion = table.query(
+        IndexName='from-delivery_status-index',
+        ScanIndexForward= False,
+        KeyConditionExpression=Key('from').eq(phone_number) & Key('delivery_status').eq('delivered')
+    )
+
+    to_promotion = table.query(
+        IndexName='to-delivery_status-index',
+        ScanIndexForward= False,
+        KeyConditionExpression=Key('to').eq(phone_number) & Key('delivery_status').eq('delivered')
+    )
+
+    from_promotion_array=from_promotion['Items']
+
+    to_promotion_array=to_promotion['Items']
+
+
+    data= {'from_delivered':from_promotion_array,'to_delivered':to_promotion_array}
+
+    print (json.dumps(data,cls=utility.DecimalEncoder))
+
+    response = {
+    "statusCode": 201,
+    "body":json.dumps(data,cls=utility.DecimalEncoder)
+    }
+
+    return response
+
 
 def clear_history(event,context):
     print json.dumps(event)
@@ -260,6 +306,10 @@ def get_driver_history(event,context):
 
     identity_id=event["requestContext"]["identity"]["cognitoIdentityId"]
 
+    body = json.loads(event['body'])
+
+    delivery_date=body['delivery_date']
+
     print (identity_id)
 
     if identity_id is None:
@@ -273,7 +323,7 @@ def get_driver_history(event,context):
     driver_id_history = table.query(
         IndexName='driver_id-delivery_date-index',
         ScanIndexForward= False,
-        KeyConditionExpression=Key('driver_id').eq(identity_id),
+        KeyConditionExpression=Key('driver_id').eq(identity_id) & Key('delivery_date').gt(delivery_date),
         Limit= 20
     )
 

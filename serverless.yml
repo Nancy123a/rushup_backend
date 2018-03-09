@@ -38,6 +38,8 @@ provider:
         - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery/index/identity_id-delivery_date-index"
         - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery/index/driver_id-delivery_date-index"
         - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery/index/driver_id-delivery_status-index"
+        - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery/index/from-delivery_status-index"
+        - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery/index/to-delivery_status-index"
         - "arn:aws:dynamodb:eu-west-1:261650959426:table/driver_token/index/username-index"
     - Effect: Allow
       Action:
@@ -89,6 +91,10 @@ custom:
         name: DriverCode
         contentType: "application/json"
         schema: ${file(models/drivercode.json)}
+      -
+        name: DateHistory
+        contentType: "application/json"
+        schema: ${file(models/dateHistory.json)}
       -
         name: PushRequest
         contentType: "application/json"
@@ -147,7 +153,6 @@ functions:
     events:
       - http:
           path: delivery
-          method: post
           method: post
           authorizer: aws_iam
           documentation:
@@ -242,10 +247,22 @@ functions:
     events:
       - http:
           path: delivery/history
-          method: get
+          method: post
           authorizer: aws_iam
           documentation:
             summary: "Delivery History"
+            requestModels:
+              "application/json": DateHistory
+
+  Promotion:
+    handler: delivery.get_promotion
+    events:
+      - http:
+          path: delivery/promotion
+          method: get
+          authorizer: aws_iam
+          documentation:
+            summary: " get promotions "
 
   ClearHistory:
     handler: delivery.clear_history
@@ -261,10 +278,12 @@ functions:
     events:
       - http:
           path: driver/history
-          method: get
+          method: post
           authorizer: aws_iam
           documentation:
             summary: "Drivery Delivery History"
+            requestModels:
+              "application/json": DateHistory
   DriverBalance:
     handler: delivery.get_driver_balance
     events:
