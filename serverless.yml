@@ -264,6 +264,7 @@ functions:
           documentation:
             summary: " get promotions "
 
+
   ClearHistory:
     handler: delivery.clear_history
     events:
