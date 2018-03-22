@@ -139,15 +139,70 @@ custom:
         name: DeliveryPickUpDropoff
         contentType: "application/json"
         schema: ${file(models/deliveryPickUpDropoff.json)}
+      -
+        name: AlluserInGroup
+        contentType: "application/json"
+        schema:
+          type: array
+          items:
+            type: string
+      -
+        name: HistoryPromotions
+        contentType: "application/json"
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              from:
+                type: string
+              to:
+                type: string
+              dropoff_location:
+                items:
+                  type: object
+                  properties:
+                    latitude:
+                      type: string
+                    longitude:
+                      type: string
+                    name:
+                      type: string
+              pickup_location:
+                type: string
+              dropoff_name:
+                type: string
+              pickup_name:
+                type: string
+              delivery_status:
+                type: string
+              delivery_date:
+                type: number
+              driver:
+                items:
+                  type: object
+                  properties:
+                    identity_id:
+                      type: string
+                    username:
+                      type: string
+                    phone:
+                      type: string
+                    delivery_count:
+                      type: string
+                    score:
+                      type: string
+                    driver_location:
+                      items:
+                        type: object
+                        properties:
+                          latitude:
+                            type: string
+                          longitude:
+                            type: string
 functions:
-  currentTime:
-    handler: handler.endpoint
-    events:
-      - http:
-          path: ping
-          method: get
-
-
   saveDelivery:
     handler: delivery.save_delivery
     events:
@@ -157,6 +212,12 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Save an approved delivery"
+            description: " save a delivery with delivery status pending "
+            queryParams:
+              -
+                name: event
+                description: "event carry delivery object information"
+                required: true
             requestModels:
               "application/json": DeliveryRequest
             methodResponses:
@@ -177,8 +238,17 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Update delivery report status"
-            requestModels:
-              "application/json": DeliveryStatusRequest
+            description: "Update delivery status upon change: timeout,no_driver,accepted,rejected,assigned,with_delivery,delivered"
+            queryParams:
+              -
+                name: deliveryid
+                description: " the id of delivery to update"
+                required: true
+            methodResponses:
+              -
+                statusCode: '200'
+                requestModels:
+                  "application/json": DeliveryStatusRequest
 
   getDelivery:
     handler: delivery.get_delivery
@@ -193,6 +263,12 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Get Delivery"
+            description: " get delivery according to delivery id parameter"
+            queryParams:
+              -
+                name: deliveryid
+                description: "id of delivery"
+                required: true
             methodResponses:
               - statusCode: '200'
                 responseModels:
@@ -210,6 +286,15 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Assign Delivery to a driver"
+            description: "Assign delivery to a specific driver"
+            queryParams:
+              -
+                name: deliveryid
+                description: "id of delivery need to be assigned to specific driver"
+                required: true
+            methodResponses:
+              - statusCode: '200'
+
   saveRushieToken:
     handler: user_push.save_token
     events:
@@ -219,6 +304,7 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Manage Endpoint platform"
+            description: "save token of user to be used with sns"
             requestModels:
               "application/json": TokenRequest
       - http:
@@ -227,8 +313,10 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Manage Endpoint platform"
+            description: "save token of user to be used with SNS"
             requestModels:
               "application/json": TokenRequest
+
   publishMessage:
     handler: user_push.publish_message
     events:
@@ -238,6 +326,7 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Send push notification to another Rushie User"
+            description: "send rushie message for android or ios user by referencing token"
             requestModels:
               "application/json": PushRequest
 
@@ -251,8 +340,14 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Delivery History"
+            description: "get history of deliveries from whom send the delivery"
             requestModels:
               "application/json": DateHistory
+          methodResponse:
+            -
+              statusCode: '200'
+              responseModels:
+                "application/json": HistoryPromotions
 
   Promotion:
     handler: delivery.get_promotion
@@ -263,7 +358,12 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: " get promotions "
-
+            description: " get promotions of driver according to pick up and drop off "
+          methodResponse:
+            -
+              statusCode: '200'
+              responseModels:
+                "application/json": HistoryPromotions
 
   ClearHistory:
     handler: delivery.clear_history
@@ -274,6 +374,11 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Clear History"
+            description: "clear history of a delivery previous to current date"
+          methodResponses:
+            -
+              statusCode: '200'
+
   DriverHistory:
     handler: delivery.get_driver_history
     events:
@@ -283,8 +388,14 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Drivery Delivery History"
+            description: "get driver history"
             requestModels:
               "application/json": DateHistory
+          methodResponse:
+            -
+              statusCode: '200'
+              responseModels:
+                "application/json": HistoryPromotions
   DriverBalance:
     handler: delivery.get_driver_balance
     events:
@@ -294,6 +405,11 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Driver balance"
+          methodResponse:
+            -
+              statusCode: '200'
+              responseModels:
+                "application/json": HistoryPromotions
   saveDriverToken:
     handler: driver_push.save_token
     events:
@@ -303,6 +419,7 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Manage Endpoint platform"
+            description: "get driver balance of delivery delivered"
             requestModels:
               "application/json": TokenRequest
 
@@ -315,6 +432,11 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Get Users of specific group"
+          methodResponse:
+            -
+              statusCode: '200'
+              responseModels:
+                "application/json": AlluserInGroup
 
   GetAllUsersInGroup:
     handler: group.get_all_users_in_group
@@ -325,7 +447,11 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Get all users from a group"
-
+          methodResponse:
+            -
+              statusCode: '200'
+              responseModels:
+                "application/json": AlluserInGroup
   CheckCode:
     handler: driver_push.get_driver_code
     events:
@@ -349,8 +475,12 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Assign driver to group"
+            description: "assign driver to group"
             requestModels:
               "application/json": DriverCode
+          methodResponses:
+            -  statusCode: '200'
+
 
   updateDriverLocation:
     handler: driver.update_location
@@ -363,6 +493,8 @@ functions:
             summary: "Update Driver Location"
             requestModels:
               "application/json": DriverLocationRequest
+          methodResponses:
+            - statusCode: '200'
 
   updateDeliveryPickupDropOff:
     handler: delivery.pick_up_dropoff_delivery
@@ -379,6 +511,8 @@ functions:
             summary: "Update Delivery Pickup and Dropoff"
             requestModels:
               "application/json": DeliveryPickUpDropoff
+          methodResponse:
+            - statusCode: '200'
 
   getDeliveryDrivers:
     handler: driver.get_delivery_drivers
@@ -393,6 +527,7 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Get Drivers for Delivery"
+            description: "get driver of delivery"
             methodResponses:
               - statusCode: '200'
                 responseModels:
@@ -406,8 +541,13 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Update Driver Status"
+            description: "update driver status to on or off"
             requestModels:
               "application/json": DriverStatusRequest
+            methodResponses:
+              - statusCode: '200'
+
+
   getDriver:
     handler: driver.get_driver
     events:
@@ -421,6 +561,7 @@ functions:
           authorizer: aws_iam
           documentation:
             summary: "Get Driver by id"
+            description: "get driver by id"
             methodResponses:
               - statusCode: '200'
                 responseModels:
@@ -439,6 +580,7 @@ functions:
               - statusCode: '200'
                 requestModels:
                   "application/json": Score
+
 
   contactSync:
     handler: contacts.sync
