@@ -15,6 +15,7 @@ dynamo_db = boto3.resource('dynamodb', region_name='eu-west-1')
 
 table = dynamo_db.Table('delivery')
 driver_token_table=dynamo_db.Table('driver_token')
+user_table=dynamo_db.Table('user_token')
 
 def save_delivery(event, context):
 
@@ -235,6 +236,26 @@ def get_history(event,context):
     response = {
         "statusCode": 201,
         "body":json.dumps(data,cls=utility.DecimalEncoder)
+    }
+    return response
+
+def getIdentity_Id(event,context):
+    body = json.loads(event['body'])
+    username=body['phone']
+
+    getIdentity_Id= user_table.query(
+        IndexName='phone-index',
+        ScanIndexForward= False,
+        KeyConditionExpression=Key('phone').eq(username)
+    )
+
+    Items=getIdentity_Id['Items'][0]
+
+    print(json.dumps(Items,cls=utility.DecimalEncoder))
+
+    response = {
+        "statusCode": 201,
+        "body":json.dumps(Items,cls=utility.DecimalEncoder)
     }
     return response
 

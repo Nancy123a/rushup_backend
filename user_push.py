@@ -2,12 +2,17 @@ import json
 import boto3
 import re
 import os
+from boto3.dynamodb.conditions import Key, Attr
+
+import utility
 
 dynamo_db = boto3.client('dynamodb')
 cognito = boto3.client('cognito-idp')
+dynamo_db_db = boto3.resource('dynamodb', region_name='eu-west-1')
 sns = boto3.client('sns')
-
+user_table = dynamo_db_db.Table('user_token')
 table_name = 'user_token'
+
 
 
 def save_token(event, context):
@@ -55,6 +60,9 @@ def save_token(event, context):
     }
 
     return response
+
+
+
 
 
 def publish_message(event, context):

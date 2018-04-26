@@ -41,6 +41,7 @@ provider:
         - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery/index/from-delivery_status-index"
         - "arn:aws:dynamodb:eu-west-1:261650959426:table/delivery/index/to-delivery_status-index"
         - "arn:aws:dynamodb:eu-west-1:261650959426:table/driver_token/index/username-index"
+        - "arn:aws:dynamodb:eu-west-1:261650959426:table/user_token/index/phone-index"
     - Effect: Allow
       Action:
         - sns:SetEndpointAttributes
@@ -103,6 +104,18 @@ custom:
         name: Score
         contentType: "application/json"
         schema: ${file(models/score.json)}
+      -
+        name: UserPhone
+        contentType: "application/json"
+        schema: ${file(models/userPhone.json)}
+      -
+        name: User
+        contentType: "application/json"
+        schema: ${file(models/user.json)}
+      -
+        name: RushupUser
+        contentType: "application/json"
+        schema: ${file(models/rushupuser.json)}
       -
         name: ContactSyncRequest
         contentType: "application/json"
@@ -316,6 +329,24 @@ functions:
             description: "save token of user to be used with SNS"
             requestModels:
               "application/json": TokenRequest
+
+  getIdentityId:
+    handler: delivery.getIdentity_Id
+    events:
+      - http:
+          path: rushie/getIdentityId
+          method: post
+          authorizer: aws_iam
+          documentation:
+            summary: "get User Identity Id"
+            description: " get User Identity Id of pick up or drop off in order to use it in getting its picture"
+            requestModels:
+              "application/json": UserPhone
+            methodResponse:
+              -
+                statusCode: '200'
+                responseModels:
+                  "application/json": RushupUser
 
   publishMessage:
     handler: user_push.publish_message
@@ -532,6 +563,8 @@ functions:
               - statusCode: '200'
                 responseModels:
                   "application/json": DeliveryDriversResponse
+
+
   updateDriverStatus:
     handler: driver.update_driver_status
     events:

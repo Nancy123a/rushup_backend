@@ -185,6 +185,7 @@ def update_location(event, context):
                 print "Distance between driver and pickup {} KM".format(d)
                 if d < 0.05:
                     push_message(dlv, dlv["from"], "driver_knock")
+                    push_message(dlv,dlv["to"],"driver_knock")
             if dlv["delivery_status"] == "with_delivery":
                 point1 = GeoPoint(float(dlv["dropoff_location"]["latitude"]), float(dlv["dropoff_location"]["longitude"]))
                 point2 = GeoPoint(float(driver["driver_location"]["latitude"]), float(driver["driver_location"]["longitude"]))
@@ -194,6 +195,7 @@ def update_location(event, context):
                     msg = dict()
                     msg["message"] = "knock knock"
                     push_message(dlv, dlv["to"], "driver_knock")
+                    push_message(dlv,dlv["from"],"driver_knock")
 
     response = {
         "statusCode": 200,
